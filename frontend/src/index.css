@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@theme {
+  --color-slc-blue: #2d366d;
+  --color-dashboard-bg: #f4f7fe;
+}
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  background-color: var(--color-dashboard-bg);
+}
