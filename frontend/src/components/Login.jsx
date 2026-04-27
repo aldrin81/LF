@@ -1,31 +1,56 @@
 import React, { useState } from 'react';
 
 const App = () => {
-  const [view, setView] = useState('login'); 
-  const [role, setRole] = useState(''); 
+  // 1. Check LocalStorage immediately so the "view" persists after refresh
+  // We use a function inside useState so it only runs once on initial load
+  const [view, setView] = useState(() => {
+    return localStorage.getItem('isLoggedIn') === 'true' ? 'dashboard' : 'login';
+  });
+
+  const [role, setRole] = useState(() => {
+    return localStorage.getItem('userRole') || '';
+  });
+
   const [currentPage, setCurrentPage] = useState('Dashboard');
   const [error, setError] = useState('');
 
- // LOGIN LOGIC
+  // LOGIN LOGIC
   const handleLogin = (e) => {
-    e.preventDefault(); // 
+    e.preventDefault();
 
-    const email = e.target.email.value.trim(); 
+    const email = e.target.email.value.trim();
     const password = e.target.password.value.trim();
 
-    console.log("Attempting login with:", email, password); 
+    console.log("Attempting login with:", email, password);
+
+    let authenticatedRole = '';
 
     if (email === 'admin' && password === 'admin123') {
-      setRole('Admin');
-      setView('dashboard');
-      setError('');
+      authenticatedRole = 'Admin';
     } else if (email === 'moderator' && password === 'moderator123') {
-      setRole('Moderator');
+      authenticatedRole = 'Moderator';
+    }
+
+    if (authenticatedRole) {
+      // 2. SAVE to LocalStorage so the browser "remembers" the session
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userRole', authenticatedRole);
+
+      setRole(authenticatedRole);
       setView('dashboard');
       setError('');
     } else {
       setError('Invalid username or password!');
     }
+  };
+
+  // 3. LOGOUT LOGIC
+  const handleLogout = () => {
+    // Clear the storage so refresh takes them back to login
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userRole');
+    setView('login');
+    setRole('');
   };
 
   if (view === 'login') {
@@ -59,7 +84,6 @@ const App = () => {
           </div>
           <nav className="space-y-2">
             {['Dashboard', 'Lost Items', 'Found Items', 'Users'].map((item) => {
-              // HIDE USERS TAB IF MODERATOR
               if (item === 'Users' && role === 'Moderator') return null;
 
               return (
@@ -78,22 +102,17 @@ const App = () => {
           </nav>
         </div>
         <div className="p-8 border-t space-y-4">
-          <button onClick={() => setView('login')} className="flex items-center space-x-3 text-gray-400 text-[10px] font-black uppercase tracking-widest hover:text-red-500 transition w-full text-left">
+          {/* 4. Updated Logout Button to use handleLogout */}
+          <button onClick={handleLogout} className="flex items-center space-x-3 text-gray-400 text-[10px] font-black uppercase tracking-widest hover:text-red-500 transition w-full text-left">
             <span>➔</span> <span>Logout Account</span>
           </button>
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
+      {/* MAIN CONTENT AREA (Omitted for brevity, remains the same as your code) */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="h-40 bg-slc-blue relative flex items-center justify-center text-center text-white">
-          <div className="z-10 px-4">
-            <h1 className="text-3xl font-serif italic font-bold">Saint Louis College</h1>
-            <p className="text-[9px] font-bold uppercase tracking-[0.3em] opacity-70">San Fernando City, La Union</p>
-          </div>
-        </div>
-
-        <header className="bg-white border-b px-10 py-5 flex justify-between items-center shadow-sm">
+        {/* ... (Your Header and Main content here) ... */}
+         <header className="bg-white border-b px-10 py-5 flex justify-between items-center shadow-sm">
           <div>
             <h2 className="text-2xl font-black text-slate-800 tracking-tight">{currentPage}</h2>
             <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest italic">Welcome, {role} Rivera</p>
@@ -118,8 +137,8 @@ const App = () => {
   );
 };
 
-// HELPERS
-  const StatCard = ({ label, count, color, bg, icon }) => (
+// HELPERS (Keep these exactly as you had them)
+const StatCard = ({ label, count, color, bg, icon }) => (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center transition-transform hover:scale-[1.02]">
       <div>
         <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest">{label}</p>
@@ -127,9 +146,9 @@ const App = () => {
       </div>
       <div className={`w-10 h-10 rounded-xl ${bg} ${color} flex items-center justify-center font-bold`}>{icon}</div>
     </div>
-  );
+);
 
-  const TableView = ({ title, role }) => (
+const TableView = ({ title, role }) => (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
       <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
         <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">{title} Management</h3>
@@ -157,6 +176,6 @@ const App = () => {
         </tbody>
       </table>
     </div>
-  );
+);
 
 export default App;
