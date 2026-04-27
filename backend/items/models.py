@@ -23,7 +23,7 @@ class ItemDetails(models.Model):
         ("VALUABLES", "Valuables"),
     ]
 
-    TYPE = [
+    ITEM_TYPE = [
         ("LOST", "Lost"),
         ("FOUND", "Found"),
     ]
@@ -42,12 +42,13 @@ class ItemDetails(models.Model):
     created_at = models.DateTimeField(max_length=15)
     image = models.ImageField(upload_to='items_photos/', null=True, blank=True)
     status = models.CharField(choices=STATUS_OPTION, max_length=30, default="PENDING")
+    type = models.CharField(choices=ITEM_TYPE, max_length=30, default="LOST")
     poster_name = models.CharField(max_length=30, default='')
     poster_contact = models.CharField(max_length=30, default='')
     
 
     def __str__(self):
-        return f"{self.title} {self.status}"
+        return f"{self.title} {self.type} {self.status}"
 
 class declinedItems(models.Model):
     item_name = models.CharField(max_length=30)
