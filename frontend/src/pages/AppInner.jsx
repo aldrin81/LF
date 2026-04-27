@@ -21,12 +21,6 @@ const AppInner = () => {
     navigate('/dashboard');
   };
 
-  const handleLogout = () => {
-    logout();
-    setShowLogin(false);
-    navigate('/');
-  };
-
   // PUBLIC LANDING
   return (
     <>
