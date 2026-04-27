@@ -20,7 +20,6 @@ const PublicBoard = ({ onOpenLogin }) => {
   const [detailItem,  setDetailItem]  = useState(null);
   const [showReport,  setShowReport]  = useState(false);
 
-  // Build the public listing from live AppContext data
   const allItems = [
     ...lostItems.map(i => ({
       id: i.id, name: i.name, cat: i.cat, type: 'Lost',
