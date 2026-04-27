@@ -76,12 +76,30 @@ export const AppProvider = ({ children }) => {
 
   const pendingClaimsCount = claimRequests.filter(c => c.status === 'Pending').length;
 
+  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
+  const [userRole, setUserRole] = useState(() => localStorage.getItem('userRole') || '');
+
+  const setLogin = (role) => {
+    setIsLoggedIn(true);
+    setUserRole(role);
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userRole', role);
+  };
+
+  const logout = () => {
+    setIsLoggedIn(false);
+    setUserRole('');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userRole');
+  };
+
   return (
     <AppContext.Provider value={{
       lostItems,  addLostItem,  updateLostItem,  deleteLostItem,
       foundItems, addFoundItem, updateFoundItem, deleteFoundItem,
       users,      addUser,      updateUser,      deleteUser,
       claimRequests, submitClaimRequest, updateClaimRequest, pendingClaimsCount,
+      isLoggedIn, setLogin, userRole, logout
     }}>
       {children}
     </AppContext.Provider>
