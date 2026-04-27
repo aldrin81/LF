@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+from datetime import timedelta, datetime
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,7 +27,7 @@ SECRET_KEY = 'django-insecure-b14#o6)kc3gf!8-d(4b5ip@9y5z0abh&1eve_8yi$3og2u9=6g
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -39,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'rest_framework_simplejwt',
+
     'rest_framework',
     'account',
     'items',
@@ -46,6 +50,13 @@ INSTALLED_APPS = [
     'notification',
 ]
 
+AUTH_USER_MODEL = 'account.Account'
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken'),
+    'BLACKLIST_AFTER_ROTATION': True,
+}
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -61,7 +72,9 @@ ROOT_URLCONF = 'backend.urls'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://localhost:5174",
 ]
 
 TEMPLATES = [
@@ -130,3 +143,11 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 #media file and root para sa image, import pa os
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+CORS_ALLOW_CREDENTIALS = True
