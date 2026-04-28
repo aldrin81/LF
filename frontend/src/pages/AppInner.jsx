@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import useClock from '../hooks/useClock';
 import LoginModal from '../components/LoginModal';
 
-// Pages
 import PublicBoard from './PublicLanding';
 
 
 import { useNavigate } from 'react-router-dom';
 
 const AppInner = () => {
-  const { time, date } = useClock();
-  const { pendingClaimsCount, isLoggedIn, setLogin, userRole, logout } = useApp();
+  const { setLogin } = useApp();
   const [showLogin, setShowLogin] = useState(false);
   const navigate = useNavigate();
 
@@ -21,7 +18,6 @@ const AppInner = () => {
     navigate('/dashboard');
   };
 
-  // PUBLIC LANDING
   return (
     <>
       <PublicBoard onOpenLogin={() => setShowLogin(true)} />
