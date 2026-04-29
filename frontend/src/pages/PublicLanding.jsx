@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useApp } from '../context/AppContext';
+import axios from 'axios';
+import { getItems } from '../api/api';
 
 // Components
 import ReportLostModal from '../components/ReportLostModal';
@@ -14,33 +16,36 @@ const statusStyle = (s) =>
   'bg-slate-100 text-slate-400';
 
 const PublicBoard = ({ onOpenLogin }) => {
-  const { lostItems, foundItems } = useApp();
+  const [reportedItems, setReportedItems] = useState([]);
   const [filter,      setFilter]      = useState('All');
   const [claimItem,   setClaimItem]   = useState(null);
   const [detailItem,  setDetailItem]  = useState(null);
   const [showReport,  setShowReport]  = useState(false);
 
-  const allItems = [
-    ...lostItems.map(i => ({
-      id: i.id, name: i.name, cat: i.cat, type: 'Lost',
-      date: i.date, time: i.time || '', status: i.status,
-      desc: i.desc, photo: i.photo,
-    })),
-    ...foundItems.map(i => ({
-      id: i.id, name: i.name, cat: i.cat, type: 'Found',
-      date: i.date, time: i.time || '', status: i.status,
-      desc: i.desc, photo: i.photo,
-    })),
-  ];
+  useEffect(() => {
+      fetchItems();
+  }, []);
 
-  const items = filter === 'All' ? allItems : allItems.filter(i => i.type === filter);
+  async function fetchItems() {
+    try {
+      const response = await getItems();
+      setReportedItems(response);
+    } catch (error) {
+      console.error('Error fetching items:', error);
+    }
+  }
+
+  const filteredItems = reportedItems.filter(item => {
+    if (filter === 'All') return true;
+    return item.type?.toLowerCase() === filter.toLowerCase();
+  });
 
   return (
     <div className="min-h-screen bg-[#F4F7FE]">
       {/* Header */}
       <header className="w-full bg-[#2D366D] px-4 sm:px-8 py-4 flex justify-between items-center shadow-md">
         <div>
-          <h1 className="text-white font-serif italic font-bold text-lg sm:text-xl tracking-tight">Saint Louis College</h1>
+          <h1 className="text-white font-serif italic font-bold text-lg xl:text-xl tracking-tight">Saint Louis College</h1>
           <p className="text-white/50 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.3em] mt-0.5 font-sans">Seek &amp; Balik — Lost &amp; Found</p>
         </div>
         <button onClick={onOpenLogin}
@@ -100,22 +105,22 @@ const PublicBoard = ({ onOpenLogin }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {items.map(item => (
+                {filteredItems.map(item => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-4 text-slate-400 font-bold">{item.id}</td>
+                    <td className="p-4 text-slate-400 font-bold">L{item.id}</td>
                     <td className="p-4 font-black text-slate-700 flex items-center gap-2">
-                      {item.photo && <img src={item.photo} alt="" className="w-7 h-7 rounded-md object-cover flex-shrink-0" />}
-                      {item.name}
+                      {item.title}
                     </td>
-                    <td className="p-4 text-slate-500">{item.cat}</td>
+                    <td className="p-4 text-slate-500">{item.category}</td>
                     <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${item.type === 'Lost' ? 'bg-red-50 text-red-400' : 'bg-green-50 text-green-500'}`}>
+                      <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${item.type?.toLowerCase() === 'lost' ? 'bg-red-50 text-red-400' : 'bg-green-50 text-green-500'}`}>
                         {item.type}
                       </span>
                     </td>
+                    <td className="p-4 text-slate-500">{item.location}</td>
                     <td className="p-4 text-slate-400 text-center">
-                      <span className="block">{item.date}</span>
-                      {item.time && <span className="text-[9px] text-slate-300">{item.time}</span>}
+                      <span className="block">{item.created_date}</span>
+                      <span className="block">{item.created_time}</span>
                     </td>
                     <td className="p-4 text-center">
                       <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${statusStyle(item.status)}`}>{item.status}</span>
@@ -138,7 +143,7 @@ const PublicBoard = ({ onOpenLogin }) => {
                     </td>
                   </tr>
                 ))}
-                {items.length === 0 && (
+                {filteredItems.length === 0 && (
                   <tr><td colSpan={7} className="py-16 text-center text-slate-300 italic text-sm">No items found.</td></tr>
                 )}
               </tbody>

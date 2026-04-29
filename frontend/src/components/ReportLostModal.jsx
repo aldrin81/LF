@@ -1,24 +1,38 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import PhotoUpload from './PhotoUpload';
+import axios from 'axios';
+import { createLostItem } from '../api/api';
 
 const AREAS = ['Canteen','Library','Parking Lot','SAO Waiting Area','Main Building','Gym'];
 const CATS  = ['Personal','Electronics','Accessories','Cash/Cards'];
 
 const ReportLostModal = ({ onClose }) => {
-  const { addLostItem } = useApp();
+  const [report, setReport] = useState([]);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
-    name: '', cat: 'Personal', reporter: '', area: 'Canteen',
-    date: '', time: '', desc: '', photo: null,
+    title: "", category: "", poster_name: "", location: "",
+    created_date: "", created_time: "", description: "", image: null,
   });
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const handleSubmit = (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    addLostItem(form);
-    setSubmitted(true);
-  };
+    try {
+      const data = await createLostItem(form);
+      window.alert(`Item ${data.title} reported successfully!`);
+    } catch (error) {
+      console.error(error);
+      window.alert('Failed to report item. Please try again.');
+    }
+  }
+
+  function handleChange(e) {
+    const {name, value} = e.target;
+
+    setForm({...form, [name]: value});
+
+  }
+  
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
@@ -58,12 +72,12 @@ const ReportLostModal = ({ onClose }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Item Name *</label>
-                  <input className="inp" value={form.name} onChange={e=>set('name',e.target.value)}
+                  <input className="inp" value={form.title} onChange={handleChange}
                     placeholder="e.g. Black Wallet" required />
                 </div>
                 <div>
                   <label className="label">Your Full Name *</label>
-                  <input className="inp" value={form.reporter} onChange={e=>set('reporter',e.target.value)}
+                  <input className="inp" value={form.poster_name} onChange={handleChange}
                     placeholder="e.g. Juan Dela Cruz" required />
                 </div>
               </div>
@@ -71,13 +85,13 @@ const ReportLostModal = ({ onClose }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Category *</label>
-                  <select className="inp" value={form.cat} onChange={e=>set('cat',e.target.value)}>
+                  <select className="inp" value={form.category} onChange={handleChange}>
                     {CATS.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="label">Where Was It Lost? *</label>
-                  <select className="inp" value={form.area} onChange={e=>set('area',e.target.value)}>
+                  <select className="inp" value={form.location} onChange={handleChange}>
                     {AREAS.map(a => <option key={a}>{a}</option>)}
                   </select>
                 </div>
@@ -86,22 +100,22 @@ const ReportLostModal = ({ onClose }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Date Lost *</label>
-                  <input className="inp" type="date" value={form.date} onChange={e=>set('date',e.target.value)} required />
+                  <input className="inp" type="date" value={form.created_date} onChange={handleChange} required />
                 </div>
                 <div>
                   <label className="label">Approximate Time</label>
-                  <input className="inp" type="time" value={form.time} onChange={e=>set('time',e.target.value)} />
+                  <input className="inp" type="time" value={form.created_time} onChange={handleChange} />
                 </div>
               </div>
 
               <div>
                 <label className="label">Description *</label>
-                <textarea className="inp resize-none" rows={3} value={form.desc} onChange={e=>set('desc',e.target.value)}
+                <textarea className="inp resize-none" rows={3} value={form.description} onChange={handleChange}
                   placeholder="Color, brand, distinguishing marks, what was inside... the more detail the better."
                   required />
               </div>
 
-              <PhotoUpload value={form.photo} onChange={v => set('photo', v)} />
+              <PhotoUpload value={form.image} onChange={handleChange} />
 
               <div className="flex gap-3 pt-2">
                 <button type="submit"

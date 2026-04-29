@@ -3,46 +3,47 @@ from django.db import models
 # Create your models here.
 class ItemDetails(models.Model):
     LOCATIONS = [
-        ("ALL", "All"),
-        ("CANTEEN", "Canteen"),
-        ("GYM", "Gym"),
-        ("HS_GROUNDS", "Highschool Grounds"),
-        ("BASEMENT", "Basement"),
-        ("MAIN_BLDG", "Main Building"),
-        ("SAO_LOBBY", "Sao Lobby"),
-        ("PARKING_AREA", "Parking Area"),
+        ("All", "All"),
+        ("Canteen", "Canteen"),
+        ("Gym", "Gym"),
+        ("Highschool Grounds", "Highschool Grounds"),
+        ("Basement", "Basement"),
+        ("Main Building", "Main Building"),
+        ("Sao Lobby", "Sao Lobby"),
+        ("Parking Area", "Parking Area"),
     ]
 
     CATEGORIES = [
-        ("ALL", "All"),
-        ("PERSONAL", "Personal"),
-        ("ACCESSORIES", "Accessories"),
-        ("ID", "Id"),
-        ("ELECTRONICS", "Electronics"),
-        ("KEYS", "Keys"),
-        ("VALUABLES", "Valuables"),
+        ("All", "All"),
+        ("Personal", "Personal"),
+        ("Accessories", "Accessories"),
+        ("Id", "Id"),
+        ("Electronics", "Electronics"),
+        ("Keys", "Keys"),
+        ("Valuables", "Valuables"),
     ]
 
     ITEM_TYPE = [
-        ("LOST", "Lost"),
-        ("FOUND", "Found"),
+        ("Lost", "Lost"),
+        ("Found", "Found"),
     ]
 
     STATUS_OPTION = [
-        ("PENDING", "Pending"),
-        ("APPROVED", "Approved"),
-        ("CLAIMED", "Claimed"),
-        ("RETURNED", "Returned"),
-        ("ARCHIVED", "Archived"),
+        ("Pending", "Pending"),
+        ("Approved", "Approved"),
+        ("Claimed", "Claimed"),
+        ("Returned", "Returned"),
+        ("Archived", "Archived"),
     ]
     title = models.CharField(max_length=30)
     description = models.TextField(max_length=100, default='')
-    category = models.CharField(choices=CATEGORIES, default="ALL", max_length=30)
-    location = models.CharField(choices=LOCATIONS, default="ALL", max_length=30)
-    created_at = models.DateTimeField(max_length=15)
+    category = models.CharField(choices=CATEGORIES, default="All", max_length=30)
+    location = models.CharField(choices=LOCATIONS, default="All", max_length=30)
+    created_date = models.DateField()
+    created_time = models.TimeField()
     image = models.ImageField(upload_to='items_photos/', null=True, blank=True)
-    status = models.CharField(choices=STATUS_OPTION, max_length=30, default="PENDING")
-    type = models.CharField(choices=ITEM_TYPE, max_length=30, default="LOST")
+    status = models.CharField(choices=STATUS_OPTION, max_length=30, default="Pending")
+    type = models.CharField(choices=ITEM_TYPE, max_length=30, default="Lost")
     poster_name = models.CharField(max_length=30, default='')
     poster_contact = models.CharField(max_length=30, default='')
     
