@@ -4,26 +4,44 @@ import PhotoUpload from './PhotoUpload';
 import axios from 'axios';
 import { createLostItem } from '../api/api';
 
-const AREAS = ['Canteen','Library','Parking Lot','SAO Waiting Area','Main Building','Gym'];
-const CATS  = ['Personal','Electronics','Accessories','Cash/Cards'];
+const AREAS = ['Canteen','Gym','Highschool Grounds','Basement','Main Building','Sao Lobby','Parking Area'];
+const CATS  = ['Personal','Accessories','Id','Electronics','Keys', 'Valuables'];
 
 const ReportLostModal = ({ onClose }) => {
   const [report, setReport] = useState([]);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
-    title: "", category: "", poster_name: "", location: "",
+    title: "", category: "Personal", poster_name: "", location: "",
     created_date: "", created_time: "", description: "", image: null,
   });
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    try {
-      const data = await createLostItem(form);
-      window.alert(`Item ${data.title} reported successfully!`);
-    } catch (error) {
-      console.error(error);
-      window.alert('Failed to report item. Please try again.');
-    }
+  e.preventDefault();
+
+  const formData = new FormData();
+
+  formData.append("title", form.title);
+  formData.append("category", form.category);
+  formData.append("poster_name", form.poster_name);
+  formData.append("location", form.location);
+  formData.append("created_date", form.created_date);
+  formData.append("created_time", form.created_time);
+  formData.append("description", form.description);
+
+  if (form.image) {
+    formData.append("image", form.image);
+  }
+
+  try {
+    const data = await createLostItem(formData);
+    setSubmitted(true);
+    setForm({
+      title: "", category: "", poster_name: "", location: "",
+      created_date: "", created_time: "", description: "", image: null,
+    });
+  } catch (error) {
+    console.error("Full error:", error);
+  }
   }
 
   function handleChange(e) {
@@ -72,26 +90,46 @@ const ReportLostModal = ({ onClose }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Item Name *</label>
-                  <input className="inp" value={form.title} onChange={handleChange}
-                    placeholder="e.g. Black Wallet" required />
+                  <input 
+                    className="inp" 
+                    type="text"
+                    name='title'
+                    value={form.title} 
+                    onChange={handleChange}
+                    placeholder="e.g. Black Wallet" 
+                    required />
                 </div>
                 <div>
                   <label className="label">Your Full Name *</label>
-                  <input className="inp" value={form.poster_name} onChange={handleChange}
-                    placeholder="e.g. Juan Dela Cruz" required />
+                  <input 
+                    className="inp" 
+                    type="text"
+                    name='poster_name'
+                    value={form.poster_name} 
+                    onChange={handleChange}
+                    placeholder="e.g. Juan Dela Cruz" 
+                    required />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Category *</label>
-                  <select className="inp" value={form.category} onChange={handleChange}>
+                  <select 
+                    className="inp"
+                    name='category'
+                    value={form.category} 
+                    onChange={handleChange}>
                     {CATS.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="label">Where Was It Lost? *</label>
-                  <select className="inp" value={form.location} onChange={handleChange}>
+                  <select 
+                    className="inp"
+                    name='location'
+                    value={form.location} 
+                    onChange={handleChange}>
                     {AREAS.map(a => <option key={a}>{a}</option>)}
                   </select>
                 </div>
@@ -100,22 +138,25 @@ const ReportLostModal = ({ onClose }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Date Lost *</label>
-                  <input className="inp" type="date" value={form.created_date} onChange={handleChange} required />
+                  <input className="inp" type="date" name='created_date' value={form.created_date} onChange={handleChange} required />
                 </div>
                 <div>
                   <label className="label">Approximate Time</label>
-                  <input className="inp" type="time" value={form.created_time} onChange={handleChange} />
+                  <input className="inp" type="time" name='created_time' value={form.created_time} onChange={handleChange} />
                 </div>
               </div>
 
               <div>
                 <label className="label">Description *</label>
-                <textarea className="inp resize-none" rows={3} value={form.description} onChange={handleChange}
+                <textarea className="inp resize-none" rows={3} name='description' value={form.description} onChange={handleChange}
                   placeholder="Color, brand, distinguishing marks, what was inside... the more detail the better."
                   required />
               </div>
 
-              <PhotoUpload value={form.image} onChange={handleChange} />
+              <PhotoUpload 
+                name='image' 
+                value={form.image} 
+                onChange={handleChange} />
 
               <div className="flex gap-3 pt-2">
                 <button type="submit"

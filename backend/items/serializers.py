@@ -6,11 +6,21 @@ class ItemSerializers(serializers.ModelSerializer):
         format='%I:%M %p', 
         input_formats=['%H:%M', '%I:%M %p']
     )
+    
     class Meta:
         model = ItemDetails
-        fields = '__all__' #palitan field galing sa model
+        fields = '__all__'
         extra_kwargs = {
             'created_time': {'format': '%H:%M'}
         }
-
-        #gawa function na jpeg png lng and pwede 
+    
+    def to_representation(self, instance):
+        """Convert image field to full URL in responses"""
+        data = super().to_representation(instance)
+        if instance.image:
+            request = self.context.get('request')
+            if request:
+                data['image'] = request.build_absolute_uri(instance.image.url)
+            else:
+                data['image'] = instance.image.url
+        return data

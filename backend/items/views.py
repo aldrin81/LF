@@ -10,12 +10,12 @@ from .serializers import ItemSerializers
 @api_view(['GET'])
 def get_item_details(request):
     lost_item = ItemDetails.objects.all()
-    serializer = ItemSerializers(lost_item, many=True)
+    serializer = ItemSerializers(lost_item, many=True, context={'request': request})
     return Response(serializer.data)
 
 @api_view(['POST'])
 def create_item_details(request):
-    serializer = ItemSerializers(data=request.data)
+    serializer = ItemSerializers(data=request.data, context={'request': request})
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -29,11 +29,11 @@ def item_details(request, pk):
         return Response(status=status.HTTP_404_NOT_FOUND)
     
     if request.method == 'GET':
-        serializer = ItemSerializers(item)
+        serializer = ItemSerializers(item, context={'request': request})
         return Response(serializer.data)
     
     elif request.method == 'PUT':
-        serializer = ItemSerializers(item, data=request.data)
+        serializer = ItemSerializers(item, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)

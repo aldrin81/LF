@@ -40,6 +40,18 @@ const PublicBoard = ({ onOpenLogin }) => {
     return item.type?.toLowerCase() === filter.toLowerCase();
   });
 
+  function toTitleCase(text) {
+  if (!text) return "";
+
+  return text
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+  const approvedItems = filteredItems.filter(item => item.status === 'Approved');
+
   return (
     <div className="min-h-screen bg-[#F4F7FE]">
       {/* Header */}
@@ -105,25 +117,26 @@ const PublicBoard = ({ onOpenLogin }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filteredItems.map(item => (
+                {approvedItems.length > 0 ? (
+                approvedItems.map(item => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-4 text-slate-400 font-bold">L{item.id}</td>
                     <td className="p-4 font-black text-slate-700 flex items-center gap-2">
-                      {item.title}
+                      {toTitleCase(item.title)}
                     </td>
-                    <td className="p-4 text-slate-500">{item.category}</td>
+                    <td className="p-4 text-slate-500">{toTitleCase(item.category)}</td>
                     <td className="p-4">
                       <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${item.type?.toLowerCase() === 'lost' ? 'bg-red-50 text-red-400' : 'bg-green-50 text-green-500'}`}>
-                        {item.type}
+                        {toTitleCase(item.type)}
                       </span>
                     </td>
-                    <td className="p-4 text-slate-500">{item.location}</td>
+                    <td className="p-4 text-slate-500">{toTitleCase(item.location)}</td>
                     <td className="p-4 text-slate-400 text-center">
                       <span className="block">{item.created_date}</span>
                       <span className="block">{item.created_time}</span>
                     </td>
                     <td className="p-4 text-center">
-                      <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${statusStyle(item.status)}`}>{item.status}</span>
+                      <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${toTitleCase(statusStyle(item.status))}`}>{item.status}</span>
                     </td>
                     <td className="p-4 text-center">
                       <div className="flex justify-center gap-1.5">
@@ -142,9 +155,11 @@ const PublicBoard = ({ onOpenLogin }) => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                ))) : (
+                  <tr><td colSpan={8} className="py-16 text-center text-slate-300 italic text-sm">No items found.</td></tr>
+                )}
                 {filteredItems.length === 0 && (
-                  <tr><td colSpan={7} className="py-16 text-center text-slate-300 italic text-sm">No items found.</td></tr>
+                  <tr><td colSpan={8} className="py-16 text-center text-slate-300 italic text-sm">No items found.</td></tr>
                 )}
               </tbody>
             </table>

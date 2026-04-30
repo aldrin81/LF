@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { getItems, getItemById, API_URL } from "../api/api";
+
 
 const AREAS = ['Canteen','Library','Parking Lot','SAO Waiting Area','Main Building','Gym'];
 const CATS  = ['Personal','Electronics','Accessories','Cash/Cards'];
@@ -10,7 +12,7 @@ const statusColor = (s) =>
   s === 'Pending'  ? 'bg-orange-100 text-orange-500' :
   'bg-green-100 text-green-500';
 
-const EMPTY = { name:'', cat:'Personal', reporter:'', area:'Canteen', date:'', desc:'' };
+const EMPTY = { title:'', category:'Personal', poster_name:'', location:'Canteen', date:'', description:'' };
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const ItemModal = ({ item, onSave, onClose }) => {
@@ -93,46 +95,110 @@ const ItemModal = ({ item, onSave, onClose }) => {
   );
 };
 
+function toTitleCase(text) {
+  if (!text) return "";
+
+  return text
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 // ─── View Modal ───────────────────────────────────────────────────────────────
-const ViewModal = ({ item, onClose }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-    onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100">
-      <div className="flex justify-between items-center px-7 py-5 border-b">
-        <h3 className="font-black text-[#2D366D] uppercase text-xs tracking-widest italic">Item Details</h3>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center text-sm">✕</button>
-      </div>
-      <div className="p-7 space-y-4 font-sans">
-        <div>
-          <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Item Name</p>
-          <p className="font-black text-[#2D366D] text-xl uppercase italic">{item.name}</p>
-        </div>
-        <div className="grid grid-cols-2 gap-4 bg-slate-50 rounded-2xl p-4 text-[10px]">
-          {[
-            ['ID',          `#${item.id}`],
-            ['Category',    item.cat],
-            ['Reported By', item.reporter],
-            ['Area Lost',   item.area],
-            ['Date',        item.date],
-            ['Status',      item.status],
-          ].map(([l,v]) => (
-            <div key={l}>
-              <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">{l}</p>
-              <p className="font-bold text-slate-700 mt-0.5">{v}</p>
-            </div>
-          ))}
-        </div>
-        {item.desc && (
-          <div>
-            <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Description</p>
-            <p className="text-[11px] text-slate-500 italic bg-blue-50/40 p-4 rounded-2xl border border-blue-50">"{item.desc}"</p>
+const ViewModal = ({ item, onClose }) => {
+  const imageUrl = item.image
+    ? item.image.startsWith('http') ? item.image : `http://localhost:8000${item.image}`
+    : null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="min-h-full flex items-center justify-center">
+        <div className="bg-white w-full max-w-md sm:max-w-lg rounded-3xl shadow-2xl border border-slate-100 max-h-[92vh] flex flex-col overflow-hidden">
+          <div className="flex justify-between items-center px-5 sm:px-7 py-4 sm:py-5 border-b shrink-0">
+            <h3 className="font-black text-[#2D366D] uppercase text-xs tracking-widest italic">
+              Item Details
+            </h3>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center text-sm shrink-0"
+            >
+              ✕
+            </button>
           </div>
-        )}
-        <button onClick={onClose} className="w-full bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all">Close</button>
+
+          <div className="p-5 sm:p-7 space-y-4 font-sans overflow-y-auto">
+            {imageUrl && (
+              <img
+                src={imageUrl}
+                alt={item.title || "Item image"}
+                className="w-full h-40 sm:h-56 object-cover rounded-2xl border border-slate-100"
+              />
+            )}
+
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                Item Name
+              </p>
+              <p className="font-black text-[#2D366D] text-lg sm:text-xl uppercase italic break-words">
+                {toTitleCase(item.title)}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 rounded-2xl p-4 text-[10px]">
+              {[
+                ["ID", `L${item.id}`],
+                ["Category", toTitleCase(item.category)],
+                ["Reported By", toTitleCase(item.poster_name)],
+                ["Area Lost", toTitleCase(item.location)],
+                ["Date", item.created_date],
+                ["Time", item.created_time],
+                ["Status", toTitleCase(item.status)],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">
+                    {label}
+                  </p>
+                  <p className="font-bold text-slate-700 mt-0.5 break-words">
+                    {value || "N/A"}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {item.description && (
+              <div>
+                <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                  Description
+                </p>
+                <p className="text-[11px] text-slate-500 italic bg-blue-50/40 p-4 rounded-2xl border border-blue-50 break-words">
+                  "{item.description}"
+                </p>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+
 
 // ─── Confirm Delete ───────────────────────────────────────────────────────────
 const ConfirmModal = ({ message, onConfirm, onClose }) => (
@@ -157,12 +223,50 @@ const LostItems = ({ role }) => {
   const [editItem, setEditItem] = useState(null);
   const [viewItem, setViewItem] = useState(null);
   const [delItem,  setDelItem]  = useState(null);
+  const [items, setItems] = useState([]);
+
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  async function fetchItems() {
+    try {
+      const response = await getItems();
+      setItems(response);
+    } catch (error){
+      console.error('Error fetching items:', error);
+    }
+  }
 
   const filtered = lostItems.filter(i =>
-    i.name.toLowerCase().includes(search.toLowerCase()) ||
-    i.reporter.toLowerCase().includes(search.toLowerCase()) ||
-    i.area.toLowerCase().includes(search.toLowerCase())
+    i.title.toLowerCase().includes(search.toLowerCase()) ||
+    i.poster_name.toLowerCase().includes(search.toLowerCase()) ||
+    i.location.toLowerCase().includes(search.toLowerCase())
   );
+
+  function toTitleCase(text) {
+  if (!text) return "";
+
+  return text
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+async function handleView(id) {
+  try {
+    const data = await getItemById(id);
+    setViewItem(data);
+  } catch (error) {
+    console.error("Error fetching item:", error);
+  }
+}
+
+
+const filteredLost = items.filter(item => item.type === 'Lost');
+
 
   return (
     <div className="bg-white rounded-xl border shadow-sm overflow-hidden font-sans">
@@ -202,14 +306,19 @@ const LostItems = ({ role }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {filtered.map(item => (
-              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                <td className="p-4 text-gray-400 font-bold">#{item.id}</td>
-                <td className="p-4 font-black text-gray-700">{item.name}</td>
-                <td className="p-4 text-gray-500">{item.cat}</td>
-                <td className="p-4 text-gray-500">{item.reporter}</td>
-                <td className="p-4 text-gray-500">{item.area}</td>
-                <td className="p-4 text-gray-500">{item.date}</td>
+            {filteredLost.length > 0 ? (
+              filteredLost.map(item => (
+                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="p-4 text-gray-400 font-bold">L{item.id}</td>
+                  <td className="p-4 font-black text-gray-700">{toTitleCase(item.title)}</td>
+                  <td className="p-4 text-gray-500">{toTitleCase(item.category)}</td>
+                  <td className="p-4 text-gray-500">{toTitleCase(item.poster_name)}</td>
+                <td className="p-4 text-gray-500">{toTitleCase(item.location)}</td>
+                <td className="p-4 text-gray-500">
+                  <span>{item.created_date}</span>    |   
+                  
+                    <span>    {item.created_time}</span>
+                  </td>
                 <td className="p-4 text-center">
                   <span className={`px-3 py-1 rounded-full font-bold text-[8px] uppercase ${statusColor(item.status)}`}>
                     {item.status}
@@ -225,9 +334,8 @@ const LostItems = ({ role }) => {
                   </div>
                 </td>
               </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan={8} className="p-10 text-center text-slate-300 italic text-xs">No items found.</td></tr>
+            ))) : (
+                <tr><td colSpan={9} className="p-10 text-center text-gray-300 italic text-xs">No lost items found.</td></tr>
             )}
           </tbody>
         </table>
