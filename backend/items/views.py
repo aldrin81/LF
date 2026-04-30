@@ -33,7 +33,7 @@ def item_details(request, pk):
         return Response(serializer.data)
     
     elif request.method == 'PUT':
-        serializer = ItemSerializers(item, data=request.data, context={'request': request})
+        serializer = ItemSerializers(item, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)

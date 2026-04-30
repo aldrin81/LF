@@ -111,6 +111,7 @@ const PublicBoard = ({ onOpenLogin }) => {
                   <th className="p-4">Item Name</th>
                   <th className="p-4">Category</th>
                   <th className="p-4">Type</th>
+                  <th className="p-4">Location</th>
                   <th className="p-4 text-center">Date</th>
                   <th className="p-4 text-center">Status</th>
                   <th className="p-4 text-center">Action</th>

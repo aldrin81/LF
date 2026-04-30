@@ -7,6 +7,7 @@ import ClaimRequests from "../pages/ClaimRequests";
 import Reports from "../pages/Reports";
 import Users from "../pages/Users";
 import DashboardLayout from "./DashboardLayout";
+import ModeratorLostItems from "../pages/ModeratorLostItems";
 
 
 function DashboardMain() {
@@ -19,6 +20,7 @@ function DashboardMain() {
         <Route path="claim-requests" element={<ClaimRequests />} />
         <Route path="reports"        element={<Reports />} />
         <Route path="users"          element={<Users />} />
+        <Route path="moderator"          element={<ModeratorLostItems />} />
       </Route>
     </Routes>
   );

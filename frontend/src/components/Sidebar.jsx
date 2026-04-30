@@ -9,7 +9,12 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
 
   const menuItems = [
     { id: 'Dashboard',      label: 'Dashboard',      icon: LayoutDashboard, path: '/dashboard' },
-    { id: 'Lost Items',     label: 'Lost Items',     icon: AlertTriangle,   path: '/dashboard/lost-items' },
+    { 
+      id: 'Lost Items',     
+      label: 'Lost Items',     
+      icon: AlertTriangle,   
+      path: role === 'Moderator' ? '/dashboard/moderator' : '/dashboard/lost-items' 
+    },
     { id: 'Found Items',    label: 'Found Items',    icon: CheckCircle,     path: '/dashboard/found-items' },
     { id: 'Claim Requests', label: 'Claim Requests', icon: Bell,            path: '/dashboard/claim-requests' },
     { id: 'Reports',        label: 'Reports',        icon: BarChart2,       path: '/dashboard/reports' },

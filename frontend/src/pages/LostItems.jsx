@@ -184,7 +184,7 @@ async function handleView(item) {
 
 
 
-const filteredLost = items.filter(item => item.type === 'Lost');
+const filteredLost = items.filter(item => item.type.toUpperCase() === 'LOST');
 
 
   return (
