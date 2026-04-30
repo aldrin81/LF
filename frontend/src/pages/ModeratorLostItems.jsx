@@ -121,7 +121,7 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
                   className="flex-[2] bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md shadow-sky-100"
                 >
                   <Eye size={14} strokeWidth={3} />
-                  {item.status === 'Pending' ? 'Review' : 'Details'}
+                  {item.status.toUpperCase() === 'PENDING' ? 'REVIIEW' : 'DETAILS'}
                 </button>
 
                 <button 
@@ -202,7 +202,7 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
               </div>
 
               {/* Approval Info Banner */}
-              {selectedItem.status === 'Approved' && (
+              {selectedItem.status.toUpperCase() === 'APPROVED' && (
                 <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center gap-4">
                   <div className="bg-emerald-500 p-2 rounded-xl text-white shadow-md">
                     <CheckCircle size={20} />
@@ -217,7 +217,7 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
               )}
 
               <div className="flex gap-3 pt-2">
-                {selectedItem.status === 'Pending' ? (
+                {selectedItem.status.toUpperCase() === 'PENDING' ? (
                   <>
                     <button 
                       onClick={() => handleUpdateStatus(selectedItem, 'Approved')}
