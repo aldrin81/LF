@@ -96,12 +96,18 @@ const ItemDetailModal = ({ item, onClaim, onClose }) => {
           ) : null}
 
           <div className="flex gap-3 pt-1">
-            {item.status !== 'Claimed' && (
-              <button onClick={() => { onClose(); onClaim(item); }}
-                className="flex-1 bg-[#2D366D] text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all">
-                Claim This Item
+            {item.status !== 'Claimed' ? (
+              <button onClick={() => onClaim(item)}
+              className="flex-1 bg-[#2D366D] text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all">
+                Claim this item
+              </button>
+            ) : (
+              <button disabled className="opacity-50 cursor-not-allowed">
+                Already Claimed
               </button>
             )}
+
+
             <button onClick={onClose}
               className="flex-1 bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all">
               Close

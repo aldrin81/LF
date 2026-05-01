@@ -21,7 +21,7 @@ def create_item_details(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET', 'PUT'])
 def item_details(request, pk):
     try:
         item = ItemDetails.objects.get(pk=pk)
@@ -39,6 +39,14 @@ def item_details(request, pk):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    elif request.method == 'DELETE':
+
+@api_view(['DELETE'])
+def delete_item(request, pk):
+    try:
+        item = ItemDetails.objects.get(pk=pk)
+    except ItemDetails.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == 'DELETE':
         item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

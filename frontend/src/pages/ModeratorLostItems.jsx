@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, X, CheckCircle, Clock, Trash2 } from 'lucide-react';
-import { getItems, API_URL, updateLostItem } from '../api/api';
+import { getItems, API_URL, editLostItem } from '../api/api';
 
 const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
   const [selectedItem, setSelectedItem] = useState(null);
