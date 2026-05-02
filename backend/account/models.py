@@ -12,13 +12,15 @@ class Account(AbstractUser):
     ]
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    is_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
         if self.is_superuser and self.role != 'admin':
             self.role = 'admin'
-            super().save(*args, **kwargs)
+
+        super().save(*args, **kwargs)
 
     def check_password(self, raw_password):
         return check_password(raw_password, self.password)

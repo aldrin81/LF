@@ -49,9 +49,7 @@ const EMPTY = {
       !form.created_date?.trim()
     ) {
       return;
-    }``
-
-
+    }
     await onSave(form);
     onClose();
   };
@@ -260,6 +258,12 @@ const EMPTY = {
 
     useEffect(() => {
       fetchItems();
+
+      const interval = setInterval(() => {
+    fetchItems();
+  }, 3000); // fetch every 1 seconds
+
+  return () => clearInterval(interval);
     }, []);
 
     //FETCHING DATA TO TABLE
@@ -271,12 +275,6 @@ const EMPTY = {
         console.error('Error fetching items:', error);
       }
     }
-
-    const filtered = lostItems.filter(i =>
-      i.title.toLowerCase().includes(search.toLowerCase()) ||
-      i.poster_name.toLowerCase().includes(search.toLowerCase()) ||
-      i.location.toLowerCase().includes(search.toLowerCase())
-    );
 
     function toTitleCase(text) {
     if (!text) return "";
@@ -365,8 +363,6 @@ const EMPTY = {
   }
 }
 
-
-
   async function handleAddItem(form) {
   try {
     const formData = new FormData();
@@ -425,9 +421,6 @@ async function handleClaimItem(item) {
   }
 }
 
-
-
-
   const filteredLost = items.filter((item) => {
   const searchText = search.toLowerCase();
 
@@ -444,11 +437,8 @@ async function handleClaimItem(item) {
   );
 });
 
-
-
-
     return (
-      <div className="bg-white rounded-xl border shadow-sm overflow-hidden font-sans">
+      <div className="bg-white rounded-xl border shadow-sm overflow-hidden font-sans h-[calc(100vh-260px)] flex flex-col">
 
         {/* header */}
         <div className="p-5 border-b flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center bg-gray-50/50">
@@ -470,7 +460,7 @@ async function handleClaimItem(item) {
         </div>
 
         {/* table — scrollable on mobile */}
-        <div className="overflow-x-auto">
+        <div className="max-h-[500px] overflow-x-auto overflow-y-auto">
           <table className="w-full text-left text-[11px] min-w-[600px]">
             <thead className="bg-gray-50 text-gray-400 font-black uppercase border-b text-[9px] tracking-widest">
               <tr>
@@ -479,7 +469,7 @@ async function handleClaimItem(item) {
                 <th className="p-4">Category</th>
                 <th className="p-4">Reported By</th>
                 <th className="p-4">Area</th>
-                <th className="p-4">Date</th>
+                <th className="p-4">Date and Time</th>
                 <th className="p-4 text-center">Status</th>
                 <th className="p-4 text-center">Actions</th>
               </tr>

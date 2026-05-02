@@ -1,88 +1,212 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { getItems, createLostItem, editLostItem, getItemById} from '../api/api';
+import ItemDetailModal from '../components/ItemDetailModal';
+import PhotoUpload from '../components/PhotoUpload';
 
-const AREAS    = ['Canteen','Library','Parking Lot','SAO Waiting Area','Main Building','Gym'];
-const CATS     = ['Personal','Electronics','Accessories','Cash/Cards'];
-const STATUSES = ['Available','Claimed'];
+const AREAS = ['Canteen','Gym','Highschool Grounds','Basement','Main Building','Sao Lobby','Parking Area'];
+const CATS  = ['Personal','Accessories','Id','Electronics','Keys', 'Valuables'];
+const STATUSES = ['Pending','Claimed', 'Approved'];
 
 const statusColor = (s) =>
-  s === 'Claimed'   ? 'bg-purple-100 text-purple-500' :
-  s === 'Available' ? 'bg-green-100 text-green-500'   :
-  'bg-slate-100 text-slate-400';
+    s === 'Claimed'  ? 'bg-purple-100 text-purple-500' :
+    s === 'Pending'  ? 'bg-orange-100 text-orange-500' :
+    s === 'Archived' ? 'bg-gray-400 text-white' :
+    'bg-green-100 text-green-500';
 
-const EMPTY = { name:'', cat:'Personal', finder:'', area:'Canteen', date:'', desc:'' };
+const EMPTY = { title:'', category:'Personal', poster_name:'', location:'Canteen', created_date:'', created_time: '', description:'', status: 'Pending', image: null };
 
 const ItemModal = ({ item, onSave, onClose }) => {
-  const [form, setForm] = useState(item || EMPTY);
-  const isEdit = !!item;
-  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+    const [form, setForm] = useState(item || EMPTY);
+    const isEdit = !!item;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-y-auto max-h-[90vh]">
-        <div className="flex justify-between items-center px-7 py-5 border-b">
-          <h3 className="font-black text-[#2D366D] uppercase text-xs tracking-widest italic">
-            {isEdit ? 'Edit Found Item' : 'Add Found Item'}
-          </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center text-sm">✕</button>
-        </div>
-        <form onSubmit={e=>{e.preventDefault();onSave(form);onClose();}} className="p-7 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Item Name</label>
-              <input className="inp" value={form.name} onChange={e=>set('name',e.target.value)} placeholder="e.g. Blue Umbrella" required />
-            </div>
-            <div>
-              <label className="label">Found By</label>
-              <input className="inp" value={form.finder} onChange={e=>set('finder',e.target.value)} placeholder="Full name" required />
-            </div>
+    useEffect(() => {
+      setForm(item || EMPTY);
+    }, [item]);
+
+    const set = (key, value) => {
+      setForm((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const handleSave = async (e) => {
+  e.preventDefault();
+
+  if (
+    !form.title?.trim() ||
+    !form.poster_name?.trim() ||
+    !form.created_date?.trim()
+  ) {
+    return;
+  }
+
+  await onSave(form);
+};
+
+
+  const handlePhotoChange = (e) => {
+  const { name, value, files } = e.target;
+
+  set(name, files ? files[0] : value);
+};
+
+
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-y-auto max-h-[90vh]">
+          <div className="flex justify-between items-center px-7 py-5 border-b">
+            <h3 className="font-black text-[#2D366D] uppercase text-xs tracking-widest italic">
+              {isEdit ? 'Edit Lost Item' : 'Add Lost Item'}
+            </h3>
+
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center text-sm"
+            >
+              ✕
+            </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Category</label>
-              <select className="inp" value={form.cat} onChange={e=>set('cat',e.target.value)}>
-                {CATS.map(c=><option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="label">Area Found</label>
-              <select className="inp" value={form.area} onChange={e=>set('area',e.target.value)}>
-                {AREAS.map(a=><option key={a}>{a}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Date Found</label>
-              <input className="inp" type="date" value={form.date} onChange={e=>set('date',e.target.value)} required />
-            </div>
-            {isEdit && (
+
+          <form onSubmit={handleSave} className="p-7 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="label">Status</label>
-                <select className="inp" value={form.status} onChange={e=>set('status',e.target.value)}>
-                  {STATUSES.map(s=><option key={s}>{s}</option>)}
+                <label className="label">Item Name</label>
+                <input
+                  className="inp"
+                  value={form.title || ''}
+                  onChange={(e) => set('title', e.target.value)}
+                  placeholder="e.g. Black Wallet"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="label">Reported By</label>
+                <input
+                  className="inp"
+                  value={form.poster_name || ''}
+                  onChange={(e) => set('poster_name', e.target.value)}
+                  placeholder="Full name"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label">Category</label>
+                <select
+                  className="inp"
+                  value={form.category || 'Personal'}
+                  onChange={(e) => set('category', e.target.value)}
+                >
+                  {CATS.map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
                 </select>
               </div>
+
+              <div>
+                <label className="label">Area Lost</label>
+                <select
+                  className="inp"
+                  value={form.location || 'Canteen'}
+                  onChange={(e) => set('location', e.target.value)}
+                >
+                  {AREAS.map((a) => (
+                    <option key={a}>{a}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label">Date Reported</label>
+                <input
+                  className="inp"
+                  type="date"
+                  value={form.created_date || ''}
+                  onChange={(e) => set('created_date', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                {!isEdit && (
+                  <div>
+                    <label className="label">Time Reported</label>
+                    <input
+                      className="inp"
+                      type="time"
+                      value={form.created_time || ''}
+                      onChange={(e) => set('created_time', e.target.value)}
+                    />
+                  </div>
+                )}
+
+              {isEdit && (
+                <div>
+                  <label className="label">Status</label>
+                  <select
+                    className="inp"
+                    value={form.status || 'Pending'}
+                    onChange={(e) => set('status', e.target.value)}
+                  >
+                    {STATUSES.map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+            </div>
+
+            <div>
+              <label className="label">Description</label>
+              <textarea
+                className="inp resize-none"
+                rows={3}
+                value={form.description || ''}
+                onChange={(e) => set('description', e.target.value)}
+                placeholder="Describe the item..."
+              />
+            </div>
+
+            {!isEdit && (
+              <PhotoUpload
+                name="image"
+                value={form.image}
+                onChange={handlePhotoChange}
+              />
             )}
-          </div>
-          <div>
-            <label className="label">Description</label>
-            <textarea className="inp resize-none" rows={3} value={form.desc} onChange={e=>set('desc',e.target.value)} placeholder="Describe the item..." />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="submit" className="flex-1 bg-[#2D366D] text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all">
-              {isEdit ? 'Save Changes' : 'Add Item'}
-            </button>
-            <button type="button" onClick={onClose} className="flex-1 bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all">
-              Cancel
-            </button>
-          </div>
-        </form>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="submit"
+                className="flex-1 bg-[#2D366D] text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all"
+              >
+                {isEdit ? 'Save Changes' : 'Add Item'}
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 const ViewModal = ({ item, onClose }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
@@ -138,12 +262,194 @@ const FoundItems = ({ role }) => {
   const [editItem, setEditItem] = useState(null);
   const [viewItem, setViewItem] = useState(null);
   const [delItem,  setDelItem]  = useState(null);
+  const [foundItem, setFoundItem] = useState([]);
 
-  const filtered = foundItems.filter(i =>
-    i.name.toLowerCase().includes(search.toLowerCase()) ||
-    i.finder.toLowerCase().includes(search.toLowerCase()) ||
-    i.area.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    fetchItems();
+
+    const interval = setInterval(() => {
+    fetchItems();
+  }, 3000); // fetch every 1 seconds
+
+  return () => clearInterval(interval);
+  }, []);
+
+  async function fetchItems(){
+    try {
+      const response = await getItems();
+      setFoundItem(response);
+    } catch (error) {
+       console.error('Error fetching items:', error);
+    }
+  }
+
+  function toTitleCase(text) {
+    if (!text) return "";
+
+    return text
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
+
+  async function handleView(item) {
+      try {
+        const response = await getItemById(item.id);
+        
+        // 1. Extract the data correctly
+        let data = response;
+        if (Array.isArray(response)) data = response[0];
+        else if (response && response.results) data = response.results[0];
+  
+        // 2. Debug: Check if 'image' or 'images' exists in 'data'
+        console.log("Full Item Data from API:", data);
+  
+        // 3. Set the state
+        setViewItem(data);
+      } catch (error) {
+        console.error("Error fetching item details:", error);
+        // Fallback to the list item if API call fails
+        setViewItem(item);
+      }
+    }
+
+
+    async function handleEdit(item) {
+        try {
+          const response = await getItemById(item.id);
+    
+          let data = response;
+          if (Array.isArray(response)) data = response[0];
+          else if (response && response.results) data = response.results[0];
+    
+          setEditItem({
+            ...data,
+            created_date: data.created_date || '',
+          });
+    
+        } catch (error) {
+          console.error('Error fetching item for edit:', error);
+    
+          setEditItem({
+            ...item,
+            created_date: item.created_date || '',
+          });
+    
+        }
+      }
+    
+    
+      async function handleSaveEdit(updatedForm) {
+      try {
+        const updatedItem = {
+          ...editItem,
+          ...updatedForm,
+        };
+    
+        const formData = new FormData();
+    
+        formData.append('title', updatedItem.title || '');
+        formData.append('poster_name', updatedItem.poster_name || '');
+        formData.append('category', updatedItem.category || '');
+        formData.append('location', updatedItem.location || '');
+        formData.append('created_date', updatedItem.created_date || '');
+        formData.append('created_time', updatedItem.created_time || '');
+        formData.append('description', updatedItem.description || '');
+        formData.append('status', updatedItem.status || '');
+        formData.append('type', 'Found');
+
+        await editLostItem(editItem.id, formData);
+
+    
+        window.alert('Item updated successfully!');
+        await fetchItems();
+        setEditItem(null);
+      } catch (error) {
+        console.error('Error updating item:', error);
+        console.error('Response data:', error.response?.data);
+        window.alert('Failed to update item. Please try again.');
+      }
+    }
+    
+    
+    
+      async function handleAddItem(form) {
+      try {
+        const formData = new FormData();
+    
+        formData.append('title', form.title);
+        formData.append('category', form.category);
+        formData.append('poster_name', form.poster_name);
+        formData.append('location', form.location);
+        formData.append('created_date', form.created_date);
+        formData.append('created_time', form.created_time || '');
+        formData.append('description', form.description || '');
+        formData.append('type', 'Found');
+
+    
+        if (form.image) {
+          formData.append('image', form.image);
+        }
+    
+        await createLostItem(formData);
+    
+        window.alert('Item added successfully!');
+        await fetchItems();
+        setAddOpen(false);
+      } catch (error) {
+        console.error('Error adding item:', error);
+        console.error('Response data:', error.response?.data);
+        window.alert('Failed to add item. Please try again.');
+      }
+    }
+    
+    async function handleClaimItem(item) {
+      if (item.status === 'Claimed') {
+        window.alert('This item is already claimed.');
+        return;
+      }
+    
+      try {
+        const formData = new FormData();
+    
+        formData.append('title', item.title || '');
+        formData.append('poster_name', item.poster_name || '');
+        formData.append('category', item.category || '');
+        formData.append('location', item.location || '');
+        formData.append('created_date', item.created_date || '');
+        formData.append('created_time', item.created_time || '');
+        formData.append('description', item.description || '');
+        formData.append('status', 'Claimed');
+    
+        await editLostItem(item.id, formData);
+    
+        window.alert('Item marked as claimed!');
+        await fetchItems();
+        setViewItem(null);
+      } catch (error) {
+        console.error('Error claiming item:', error);
+        console.error('Response data:', error.response?.data);
+        window.alert('Failed to claim item. Please try again.');
+      }
+    }
+
+  const filteredFound = foundItem.filter((item) => {
+  const searchText = search.toLowerCase();
+
+  return (
+    item.type?.toUpperCase() === 'FOUND' &&
+    item.status?.toUpperCase() !== 'CLAIMED' &&
+    (
+      item.title?.toLowerCase().includes(searchText) ||
+      item.category?.toLowerCase().includes(searchText) ||
+      item.poster_name?.toLowerCase().includes(searchText) ||
+      item.location?.toLowerCase().includes(searchText) ||
+      item.status?.toLowerCase().includes(searchText)
+    )
   );
+});
 
   return (
     <div className="bg-white rounded-xl border shadow-sm overflow-hidden font-sans">
@@ -164,51 +470,70 @@ const FoundItems = ({ role }) => {
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-[11px] min-w-[620px]">
-          <thead className="bg-gray-50 text-gray-400 font-black uppercase border-b text-[9px] tracking-widest">
-            <tr>
+          <thead className="block bg-gray-50 text-gray-400 font-black uppercase border-b text-[9px] tracking-widest">
+            <tr className="table w-full table-fixed">
               <th className="p-4">ID</th>
               <th className="p-4">Item Name</th>
               <th className="p-4">Category</th>
               <th className="p-4">Found By</th>
               <th className="p-4">Area</th>
-              <th className="p-4">Date</th>
+              <th className="p-4">Date and Time</th>
               <th className="p-4 text-center">Status</th>
               <th className="p-4 text-center">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filtered.map(item=>(
-              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                <td className="p-4 text-gray-400 font-bold">#{item.id}</td>
-                <td className="p-4 font-black text-gray-700">{item.name}</td>
-                <td className="p-4 text-gray-500">{item.cat}</td>
-                <td className="p-4 text-gray-500">{item.finder}</td>
-                <td className="p-4 text-gray-500">{item.area}</td>
-                <td className="p-4 text-gray-500">{item.date}</td>
-                <td className="p-4 text-center">
-                  <span className={`px-3 py-1 rounded-full font-bold text-[8px] uppercase ${statusColor(item.status)}`}>{item.status}</span>
-                </td>
-                <td className="p-4 text-center">
-                  <div className="flex justify-center gap-2 text-[9px] font-black uppercase">
-                    <button onClick={()=>setViewItem(item)} className="text-blue-500 hover:underline">View</button>
-                    <button onClick={()=>setEditItem(item)} className="text-amber-500 hover:underline">Edit</button>
-                    {role === 'Admin' && (
-                      <button onClick={()=>setDelItem(item)} className="text-red-400 hover:underline">Delete</button>
-                    )}
-                  </div>
+
+          <tbody className="block max-h-[420px] overflow-y-auto divide-y divide-gray-100">
+            {filteredFound.length > 0 ? (
+              filteredFound.map((item) => (
+                <tr key={item.id} className="table w-full table-fixed hover:bg-gray-50 transition-colors">
+                  <td className="p-4 text-gray-400 font-bold">F{item.id}</td>
+                  <td className="p-4 font-black text-gray-700">{toTitleCase(item.title)}</td>
+                  <td className="p-4 text-gray-500">{toTitleCase(item.category)}</td>
+                  <td className="p-4 text-gray-500">{toTitleCase(item.poster_name)}</td>
+                  <td className="p-4 text-gray-500">{toTitleCase(item.location)}</td>
+                  <td className="p-4 text-gray-500">
+                    <span>{item.created_date}</span> | <span>{item.created_time}</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className={`px-3 py-1 rounded-full font-bold text-[8px] uppercase ${statusColor(item.status)}`}>
+                      {toTitleCase(item.status)}
+                    </span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <div className="flex justify-center gap-2 text-[9px] font-black uppercase">
+                      <button onClick={() => handleView(item)} className="text-blue-500 hover:underline">
+                        View
+                      </button>
+
+                      <button onClick={() => handleEdit(item)} className="text-amber-500 hover:underline">
+                        Edit
+                      </button>
+
+                      {role === 'Admin' && (
+                        <button onClick={() => setDelItem(item)} className="text-red-400 hover:underline">
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr className="table w-full table-fixed">
+                <td colSpan={8} className="p-10 text-center text-slate-300 italic text-xs">
+                  No items found.
                 </td>
               </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan={8} className="p-10 text-center text-slate-300 italic text-xs">No items found.</td></tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {addOpen  && <ItemModal onSave={addFoundItem} onClose={()=>setAddOpen(false)} />}
-      {editItem && <ItemModal item={editItem} onSave={u=>updateFoundItem(editItem.id,u)} onClose={()=>setEditItem(null)} />}
-      {viewItem && <ViewModal item={viewItem} onClose={()=>setViewItem(null)} />}
+
+      {addOpen  && <ItemModal onSave={handleAddItem} onClose={()=>setAddOpen(false)} />}
+      {editItem && <ItemModal item={editItem} onSave={handleSaveEdit} onClose={()=>setEditItem(null)} />}
+      {viewItem && <ItemDetailModal item={viewItem} onClose={()=>setViewItem(null)} />}
       {delItem  && (
         <ConfirmModal
           message={`This will permanently delete "${delItem.name}". This action cannot be undone.`}

@@ -1,14 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { getUsers, getUserById, updateUserById, createUser } from '../api/api';
 
-const ROLES = ['Admin','Moderator','User'];
+const ROLES = [
+  { label: 'Admin', value: 'admin' },
+  { label: 'Moderator', value: 'moderator' },
+];
+
 
 const roleColor = (r) =>
-  r === 'Admin'     ? 'bg-green-100 text-green-600'  :
-  r === 'Moderator' ? 'bg-purple-100 text-purple-500':
+  r === 'admin'     ? 'bg-green-100 text-green-600'  :
+  r === 'moderator' ? 'bg-purple-100 text-purple-500':
   'bg-blue-100 text-blue-500';
 
-const EMPTY = { name:'', idNum:'', role:'User', email:'', status:'Active' };
+const statusColor = (status) => {
+  if (status === 'archived') return 'bg-gray-400 text-white';
+  return status ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500';
+};
+
+const statusText = (status) => {
+  if (status === 'archived') return 'Archived';
+  return status ? 'Active' : 'Inactive';
+};
+
+const EMPTY = { id:'', username:'', first_name:'', last_name:'', email:'', role: 'moderator', is_active: null, created_at: '', updated_at: '' };
 
 const UserModal = ({ user, onSave, onClose }) => {
   const [form, setForm] = useState(user || EMPTY);
@@ -25,41 +40,110 @@ const UserModal = ({ user, onSave, onClose }) => {
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center text-sm">✕</button>
         </div>
-        <form onSubmit={e=>{e.preventDefault();onSave(form);onClose();}} className="p-7 space-y-4">
-          <div>
-            <label className="label">Full Name</label>
-            <input className="inp" value={form.name} onChange={e=>set('name',e.target.value)} placeholder="e.g. Juan Dela Cruz" required />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+        <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              await onSave(form);
+            }}
+            className="p-7 space-y-4"
+          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="label">ID Number</label>
-              <input className="inp" value={form.idNum} onChange={e=>set('idNum',e.target.value)} placeholder="e.g. 23100101" required />
+              <label className="label">First Name</label>
+              <input
+                className="inp"
+                value={form.first_name || ''}
+                onChange={(e) => set('first_name', e.target.value)}
+                placeholder="First name"
+              />
             </div>
+
             <div>
-              <label className="label">Role</label>
-              <select className="inp" value={form.role} onChange={e=>set('role',e.target.value)}>
-                {ROLES.map(r=><option key={r}>{r}</option>)}
-              </select>
+              <label className="label">Last Name</label>
+              <input
+                className="inp"
+                value={form.last_name || ''}
+                onChange={(e) => set('last_name', e.target.value)}
+                placeholder="Last name"
+              />
             </div>
           </div>
+
           <div>
             <label className="label">Email Address</label>
-            <input className="inp" type="email" value={form.email} onChange={e=>set('email',e.target.value)} placeholder="e.g. juan@slc.edu.ph" required />
+            <input
+              className="inp"
+              type="email"
+              value={form.email || ''}
+              onChange={(e) => set('email', e.target.value)}
+              placeholder="email@example.com"
+            />
           </div>
+
+          <div>
+            <label className="label">Username</label>
+            <input
+              className="inp"
+              value={form.username || ''}
+              onChange={(e) => set('username', e.target.value)}
+              placeholder="Username"
+              required
+            />
+          </div>
+
+          {!isEdit && (
+            <div>
+              <label className="label">Password</label>
+              <input
+                className="inp"
+                type="password"
+                value={form.password || ''}
+                onChange={(e) => set('password', e.target.value)}
+                placeholder="Password"
+                required
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="label">Role</label>
+            <select
+              className="inp"
+              value={form.role || 'moderator'}
+              onChange={(e) => set('role', e.target.value)}
+            >
+              <option value="admin">Admin</option>
+              <option value="moderator">Moderator</option>
+            </select>
+          </div>
+
           {isEdit && (
             <div>
               <label className="label">Status</label>
-              <select className="inp" value={form.status} onChange={e=>set('status',e.target.value)}>
+              <select
+                className="inp"
+                value={form.is_active ? 'Active' : 'Inactive'}
+                onChange={(e) => set('is_active', e.target.value === 'Active')}
+              >
                 <option>Active</option>
-                <option>Banned</option>
+                <option>Inactive</option>
               </select>
             </div>
           )}
+
           <div className="flex gap-3 pt-2">
-            <button type="submit" className="flex-1 bg-[#2D366D] text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all">
+            <button
+              type="submit"
+              className="flex-1 bg-[#2D366D] text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all"
+            >
               {isEdit ? 'Save Changes' : 'Add User'}
             </button>
-            <button type="button" onClick={onClose} className="flex-1 bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all">
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all"
+            >
               Cancel
             </button>
           </div>
@@ -84,18 +168,111 @@ const ConfirmModal = ({ message, onConfirm, onClose }) => (
 );
 
 const Users = () => {
-  const { users, addUser, updateUser, deleteUser } = useApp();
   const [search,    setSearch]    = useState('');
   const [addOpen,   setAddOpen]   = useState(false);
   const [editUser,  setEditUser]  = useState(null);
   const [delUser,   setDelUser]   = useState(null);
   const [banUser,   setBanUser]   = useState(null);
+  const [user, setUser] = useState([]);
 
-  const filtered = users.filter(u =>
-    u.name.toLowerCase().includes(search.toLowerCase()) ||
-    u.idNum.includes(search) ||
-    u.email.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    fetchUsers();
+
+    const interval = setInterval(() => {
+    fetchItems();
+  }, 1000); // fetch every 1 seconds
+
+  return () => clearInterval(interval);
+  }, [])
+
+  async function fetchUsers() {
+    try {
+      const data = await getUsers();
+      setUser(data);
+    } catch (error) {
+      console.log("Fetching error: ", error)
+    }
+  }
+  
+
+  async function handleEdit(user) {
+  try {
+    const data = await getUserById(user.id);
+    setEditUser(data);
+  } catch (error) {
+    console.error('Error fetching user details:', error.response?.data || error);
+    setEditUser(user);
+  }
+}
+
+async function handleSaveEdit(updatedUser) {
+  try {
+    await updateUserById(editUser.id, {
+      username: updatedUser.username,
+      first_name: updatedUser.first_name,
+      last_name: updatedUser.last_name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      is_active: updatedUser.is_active,
+      
+    });
+      await fetchUsers();
+      window.alert('Item updated successfully!');
+    setEditUser(null);
+  } catch (error) {
+    console.error('Error updating user:', error.response?.data || error);
+    alert('Failed to update user.');
+  }
+}
+
+async function handleAddUser(newUser) {
+  try {
+    await createUser({
+      username: newUser.username,
+      first_name: newUser.first_name,
+      last_name: newUser.last_name,
+      email: newUser.email,
+      role: newUser.role || 'moderator',
+      password: newUser.password,
+      is_active: true,
+    });
+
+    const refreshedUsers = await getUsers();
+    setUser(refreshedUsers);
+
+    setAddOpen(false);
+    window.alert('User added successfully!');
+  } catch (error) {
+    console.error('Error adding user:', error.response?.data || error);
+    alert(JSON.stringify(error.response?.data || 'Failed to add user.'));
+  }
+}
+
+
+
+  const filtered = user.filter((u) => {
+  const searchText = search.toLowerCase();
+  const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username;
+
+  return (
+    fullName.toLowerCase().includes(searchText) ||
+    String(u.id).includes(searchText) ||
+    u.username?.toLowerCase().includes(searchText) ||
+    u.email?.toLowerCase().includes(searchText) ||
+    u.role?.toLowerCase().includes(searchText)
   );
+});
+
+function toTitleCase(text) {
+    if (!text) return "";
+
+    return text
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
 
   return (
     <div className="bg-white rounded-xl border shadow-sm overflow-hidden font-sans">
@@ -119,9 +296,9 @@ const Users = () => {
           <thead className="bg-gray-50 text-gray-400 font-black uppercase border-b text-[9px] tracking-widest">
             <tr>
               <th className="p-4">ID</th>
-              <th className="p-4">Name</th>
-              <th className="p-4">ID Number</th>
-              <th className="p-4">Email</th>
+              <th className="p-4">Username</th>
+              <th className="p-4">First Name</th>
+              <th className="p-4">Last Name</th>
               <th className="p-4 text-center">Role</th>
               <th className="p-4 text-center">Status</th>
               <th className="p-4 text-center">Actions</th>
@@ -130,21 +307,26 @@ const Users = () => {
           <tbody className="divide-y divide-gray-100">
             {filtered.map(user=>(
               <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                <td className="p-4 text-gray-400 font-bold">#{user.id}</td>
-                <td className="p-4 font-black text-gray-700">{user.name}</td>
-                <td className="p-4 text-gray-500 font-mono">{user.idNum}</td>
-                <td className="p-4 text-gray-500">{user.email}</td>
+                <td className="p-4 text-gray-400 font-bold">U{user.id}</td>
+                <td className="p-6 font-bold text-slate-700">
+                {toTitleCase(user.username)}
+              </td>
+              <td className="p-4 text-gray-500 ">{toTitleCase(user.first_name)}</td>
+              <td className="p-4 text-gray-500">{toTitleCase(user.last_name)}</td>
                 <td className="p-4 text-center">
                   <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${roleColor(user.role)}`}>{user.role}</span>
                 </td>
                 <td className="p-4 text-center">
-                  <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${user.status === 'Active' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>
-                    {user.status}
+                  <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${statusColor(user.is_active)}`}>
+                    {statusText(user.is_active)}
                   </span>
                 </td>
                 <td className="p-4 text-center">
                   <div className="flex justify-center gap-2 text-[9px] font-black uppercase">
-                    <button onClick={()=>setEditUser(user)} className="text-amber-500 hover:underline">Edit</button>
+                    <button onClick={() => handleEdit(user)} className="text-amber-500 hover:underline">
+                      Edit
+                    </button>
+
                     <button
                       onClick={()=>setBanUser(user)}
                       className={user.status === 'Active' ? 'text-orange-400 hover:underline' : 'text-green-500 hover:underline'}
@@ -163,8 +345,15 @@ const Users = () => {
         </table>
       </div>
 
-      {addOpen  && <UserModal onSave={addUser} onClose={()=>setAddOpen(false)} />}
-      {editUser && <UserModal user={editUser} onSave={u=>updateUser(editUser.id,u)} onClose={()=>setEditUser(null)} />}
+      {addOpen  && <UserModal onSave={handleAddUser} onClose={()=>setAddOpen(false)} />}
+      {editUser && (
+        <UserModal
+          user={editUser}
+          onSave={handleSaveEdit}
+          onClose={() => setEditUser(null)}
+        />
+      )}
+
       {banUser  && (
         <ConfirmModal
           message={`${banUser.status === 'Active' ? 'Ban' : 'Unban'} "${banUser.name}"?`}

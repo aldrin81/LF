@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { loginUser, getCurrentUser } from './api/api';
+
 
 const App = () => {
   // 1. Check LocalStorage immediately so the "view" persists after refresh
@@ -15,43 +17,46 @@ const App = () => {
   const [error, setError] = useState('');
 
   // LOGIN LOGIC
-  const handleLogin = (e) => {
-    e.preventDefault();
+  const handleLogin = async (e) => {
+  e.preventDefault();
 
-    const email = e.target.email.value.trim();
-    const password = e.target.password.value.trim();
+  const username = e.target.email.value.trim();
+  const password = e.target.password.value.trim();
 
-    console.log("Attempting login with:", email, password);
+  try {
+    const loginData = await loginUser(username, password);
+    console.log('Login data:', loginData);
 
-    let authenticatedRole = '';
+    const currentUser = await getCurrentUser();
+    console.log('Current user:', currentUser);
 
-    if (email === 'admin' && password === 'admin123') {
-      authenticatedRole = 'Admin';
-    } else if (email === 'moderator' && password === 'moderator123') {
-      authenticatedRole = 'Moderator';
-    }
+    const authenticatedRole =
+      currentUser.role === 'admin' ? 'Admin' : 'Moderator';
 
-    if (authenticatedRole) {
-      // 2. SAVE to LocalStorage so the browser "remembers" the session
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userRole', authenticatedRole);
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userRole', authenticatedRole);
 
-      setRole(authenticatedRole);
-      setView('dashboard');
-      setError('');
-    } else {
-      setError('Invalid username or password!');
-    }
-  };
+    setRole(authenticatedRole);
+    setView('dashboard');
+    setError('');
+  } catch (error) {
+    console.error('Login error:', error.response?.data || error);
+    setError('Invalid username or password!');
+  }
+};
+
 
   // 3. LOGOUT LOGIC
   const handleLogout = () => {
-    // Clear the storage so refresh takes them back to login
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userRole');
-    setView('login');
-    setRole('');
-  };
+  localStorage.removeItem('isLoggedIn');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+
+  setView('login');
+  setRole('');
+};
+
 
   if (view === 'login') {
     return (

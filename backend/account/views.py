@@ -11,7 +11,7 @@ from django.contrib.auth import authenticate
 
 
 @api_view(["POST"])
-@permission_classes(IsAuthenticated)
+@permission_classes([IsAuthenticated])
 def register(request):
     serializer = AccountSerializer(data=request.data)
     if serializer.is_valid():
@@ -86,9 +86,10 @@ def current_user(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_user(request):
-    user = Account.objects.all()
-    serializer = AccountSerializer (user, many = True)
+    users = Account.objects.filter()
+    serializer = AccountSerializer(users, many=True)
     return Response(serializer.data)
+
 
 @api_view([ "GET" , "PUT", 'DELETE'])
 @permission_classes([IsAuthenticated])
@@ -99,14 +100,9 @@ def update_user(request, pk):
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        user_data =  AccountSerializer(user).data
+        serializer = AccountSerializer(user)
+        return Response(serializer.data)
 
-        return Response( {
-            "User": {
-                "id": user_data["id"],
-                "first_name": user_data["first_name"]
-            }
-        })
 
     elif request.method == 'PUT':
         serializer = AccountSerializer(user, data=request.data, partial=True) 

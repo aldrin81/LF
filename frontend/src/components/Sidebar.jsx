@@ -7,13 +7,16 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
   const { pendingClaimsCount } = useApp();
   const { pathname } = useLocation();
 
+  const normalizedRole = role?.toLowerCase();
+
+
   const menuItems = [
     { id: 'Dashboard',      label: 'Dashboard',      icon: LayoutDashboard, path: '/dashboard' },
     { 
       id: 'Lost Items',     
       label: 'Lost Items',     
       icon: AlertTriangle,   
-      path: role === 'Moderator' ? '/dashboard/moderator' : '/dashboard/lost-items' 
+      path: normalizedRole === 'Moderator' ? '/dashboard/moderator' : '/dashboard/lost-items' 
     },
     { id: 'Found Items',    label: 'Found Items',    icon: CheckCircle,     path: '/dashboard/found-items' },
     { id: 'Claim Requests', label: 'Claim Requests', icon: Bell,            path: '/dashboard/claim-requests' },
@@ -36,7 +39,7 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
         {/* Nav */}
         <nav className="px-3 space-y-1">
           {menuItems.map((item) => {
-            if (item.id === 'Users' && role !== 'Admin') return null;
+            if (item.id === 'users' && normalizedRole !== 'admin') return null;
             const Icon = item.icon;
             const hasBadge = item.id === 'Claim Requests' && pendingClaimsCount > 0;
             const isActive = item.path === '/dashboard'

@@ -24,6 +24,11 @@ const PublicBoard = ({ onOpenLogin }) => {
 
   useEffect(() => {
       fetchItems();
+      const interval = setInterval(() => {
+    fetchItems();
+  }, 3000); // fetch every 1 seconds
+
+  return () => clearInterval(interval);
   }, []);
 
   async function fetchItems() {
@@ -113,7 +118,6 @@ const PublicBoard = ({ onOpenLogin }) => {
                   <th className="p-4">Type</th>
                   <th className="p-4">Location</th>
                   <th className="p-4 text-center">Date</th>
-                  <th className="p-4 text-center">Status</th>
                   <th className="p-4 text-center">Action</th>
                 </tr>
               </thead>
@@ -137,9 +141,6 @@ const PublicBoard = ({ onOpenLogin }) => {
                       <span className="block">{item.created_time}</span>
                     </td>
                     <td className="p-4 text-center">
-                      <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${toTitleCase(statusStyle(item.status))}`}>{item.status}</span>
-                    </td>
-                    <td className="p-4 text-center">
                       <div className="flex justify-center gap-1.5">
                         <button onClick={() => setDetailItem(item)}
                           className="border border-slate-200 text-slate-500 hover:border-[#2D366D] hover:text-[#2D366D] px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all font-sans">
@@ -157,9 +158,6 @@ const PublicBoard = ({ onOpenLogin }) => {
                     </td>
                   </tr>
                 ))) : (
-                  <tr><td colSpan={8} className="py-16 text-center text-slate-300 italic text-sm">No items found.</td></tr>
-                )}
-                {filteredItems.length === 0 && (
                   <tr><td colSpan={8} className="py-16 text-center text-slate-300 italic text-sm">No items found.</td></tr>
                 )}
               </tbody>

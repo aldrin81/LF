@@ -1,10 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+
+
 
 const Users = () => {
-  const users = [
-    { id: '2022-001', name: 'Daphne Rivera', role: 'Admin', email: 'daphne@slc.edu.ph' },
-    { id: '2022-045', name: 'Aldrin Suarez Jr', role: 'Student', email: 'aldrin@slc.edu.ph' },
-  ];
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
@@ -22,10 +20,12 @@ const Users = () => {
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-50 text-center">
-          {users.map((u) => (
+          {data.map((u) => (
             <tr key={u.id} className="text-sm hover:bg-slate-50 transition">
               <td className="p-6 font-mono text-slate-400">{u.id}</td>
-              <td className="p-6 font-bold text-slate-700">{u.name}</td>
+              <td className="p-6 font-bold text-slate-700">
+                {`${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username}
+              </td>
               <td className="p-6 text-slate-500">{u.email}</td>
               <td className="p-6">
                 <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase ${u.role === 'Admin' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
