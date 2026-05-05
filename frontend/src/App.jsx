@@ -11,7 +11,6 @@ const App = () => (
       <Routes>
         <Route path="/" element={<AppInner />} />
         <Route path="/dashboard/*" element={<DashboardMain />} />
-        <Route path='/moderator' element={<ModeratorLostItems />} />
       </Routes>
     </Router>
   </AppProvider>

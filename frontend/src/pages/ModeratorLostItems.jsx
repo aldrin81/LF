@@ -16,7 +16,12 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
       setLoading(true);
       const data = await getItems();
       const actualData = Array.isArray(data) ? data : (data.results || []);
-      setItems(actualData);
+      const pendingLostItems = actualData.filter((item) => {
+        return item.status === 'Pending' && item.type === 'Lost';
+      });
+
+      setItems(pendingLostItems);
+
     } catch (error) {
       console.error("Error fetching items:", error);
     } finally {
@@ -25,10 +30,12 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
   };
 
   const handleUpdateStatus = async (item, status = 'Approved') => {
+    if (!window.confirm("Are you sure you want to approve this item?")) return;
     try {
       // Since the backend now supports partial=True, we only send what changed
-      await updateLostItem(item.id, { status: status });
+      await editLostItem(item.id, { status: status });
       
+      window.alert("Item approved.")
       setSelectedItem(null);
       await fetchData(); 
 
@@ -43,7 +50,8 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
     if (!window.confirm("Are you sure you want to delete/decline this item?")) return;
     try {
       // Assuming updateLostItem can be used for declining by setting status to 'Archived' or similar
-      await updateLostItem(id, { status: 'Archived' }); 
+      await editLostItem(id, { status: 'Archived' }); 
+      window.alert("Item declined.")
       setSelectedItem(null);
       fetchData();
     } catch (error) {
@@ -82,25 +90,25 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
               <div className="relative mb-4 overflow-hidden rounded-2xl h-52 sm:h-64 bg-slate-100">
                 <img
                   src={imageUrl || "https://via.placeholder.com/400x300?text=No+Image"}
-                  alt={item.title}
+                  alt="Item Picture"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <span
-                  className={`absolute top-3 right-3 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full flex items-center gap-1 shadow-lg ${
-                    item.status === 'Approved' ? 'bg-emerald-500' : 'bg-orange-400'
+                  className={`absolute top-3 right-3 text-white text-[12px] font-black uppercase px-3 py-1 rounded-full flex items-center gap-1 shadow-lg ${
+                    item.status === 'Approved' ? 'bg-emerald-500' : 'bg-orange-500'
                   }`}
                 >
                   {item.status === 'Approved' && <CheckCircle size={12} />}
                   {item.status}
                 </span>
 
-                <span className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white text-[9px] font-bold uppercase px-2.5 py-1 rounded-lg flex items-center gap-1">
-                  <Clock size={10} />
+                <span className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white text-[12px] font-bold uppercase px-2.5 py-1 rounded-lg flex items-center gap-1">
+                  <Clock size={12} />
                   {item.created_time || '—'}
                 </span>
               </div>
 
-              <h4 className="font-black text-slate-800 uppercase text-sm tracking-tight mb-3 truncate">{item.title}</h4>
+              <h4 className="font-black text-slate-800 uppercase text-md tracking-tight mb-3 truncate">{item.title}</h4>
 
               <div className="grid grid-cols-2 gap-y-3 gap-x-2 mb-4">
                 {[
@@ -109,8 +117,8 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
                   { label: 'Date', val: item.created_date },
                 ].map((info, idx) => (
                   <div key={idx}>
-                    <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest">{info.label}</p>
-                    <p className="text-[10px] font-bold text-slate-600 truncate">{info.val || '—'}</p>
+                    <p className="text-[13px] text-slate-400 font-black uppercase tracking-widest">{info.label}</p>
+                    <p className="text-[12px] font-bold text-slate-600 truncate">{info.val || '—'}</p>
                   </div>
                 ))}
               </div>
@@ -121,7 +129,7 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
                   className="flex-[2] bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md shadow-sky-100"
                 >
                   <Eye size={14} strokeWidth={3} />
-                  {item.status.toUpperCase() === 'PENDING' ? 'REVIIEW' : 'DETAILS'}
+                  {item.status === 'Pending' ? 'Review' : 'Details'}
                 </button>
 
                 <button 
@@ -202,7 +210,7 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
               </div>
 
               {/* Approval Info Banner */}
-              {selectedItem.status.toUpperCase() === 'APPROVED' && (
+              {selectedItem.status === 'Approved' && (
                 <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center gap-4">
                   <div className="bg-emerald-500 p-2 rounded-xl text-white shadow-md">
                     <CheckCircle size={20} />
@@ -217,7 +225,7 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
               )}
 
               <div className="flex gap-3 pt-2">
-                {selectedItem.status.toUpperCase() === 'PENDING' ? (
+                {selectedItem.status === 'Pending' ? (
                   <>
                     <button 
                       onClick={() => handleUpdateStatus(selectedItem, 'Approved')}

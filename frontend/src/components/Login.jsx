@@ -9,6 +9,12 @@ const App = () => {
     return localStorage.getItem('isLoggedIn') === 'true' ? 'dashboard' : 'login';
   });
 
+  const adminPages = ['Dashboard', 'Lost Items', 'Found Items', 'Claim Reports', 'Users'];
+  const moderatorPages = ['Dashboard', 'Lost Items', 'Found Items', 'Claim Reports'];
+
+  const allowedPages = role === 'Admin' ? adminPages : moderatorPages;
+
+
   const [role, setRole] = useState(() => {
     return localStorage.getItem('userRole') || '';
   });

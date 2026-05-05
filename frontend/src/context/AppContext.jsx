@@ -3,11 +3,6 @@ import React, { createContext, useContext, useState } from 'react';
 const AppContext = createContext(null);
 export const useApp = () => useContext(AppContext);
 
-let lostCounter  = 9;
-let foundCounter = 7;
-let userCounter  = 7;
-let claimCounter = 1; 
-
 export const AppProvider = ({ children }) => {
   const [lostItems,     setLostItems]     = useState([]);
   const [foundItems,    setFoundItems]    = useState([]);

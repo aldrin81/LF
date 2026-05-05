@@ -53,9 +53,9 @@ const DashboardLayout = () => {
       {/* Top Brand Header */}
       <header className="w-full bg-[#2D366D] flex items-center justify-center text-center text-white z-30 shadow-md py-4 sm:py-0 sm:h-28 flex-shrink-0">
         <div>
-          <h1 className="text-xl sm:text-3xl font-serif italic font-bold tracking-tight">Saint Louis College</h1>
-          <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.5em] opacity-70 mt-1">San Fernando City, La Union</p>
-          <p className="hidden sm:block text-[11px] italic mt-2 opacity-90 font-light">"The Beacon of Wisdom in the North"</p>
+          <h1 className="text-3xl sm:text-4xl font-serif italic font-bold tracking-tight">Saint Louis College</h1>
+          <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.5em] opacity-70 mt-1">San Fernando City, La Union</p>
+          <p className="hidden sm:block text-[15px] italic mt-2 opacity-90 font-light">"The Beacon of Wisdom in the North"</p>
         </div>
       </header>
 
@@ -83,9 +83,9 @@ const DashboardLayout = () => {
                 )}
               </h2>
               <div className="hidden sm:flex items-center gap-1.5 mt-1">
-                <span className="text-[9px] font-black uppercase tracking-widest text-[#2D366D]">{time}</span>
-                <span className="text-slate-300 text-[9px]">·</span>
-                <span className="text-[9px] font-bold text-slate-400">{date}</span>
+                <span className="text-[12px] font-black uppercase tracking-widest text-[#2D366D]">{time}</span>
+                <span className="text-black-900 text-[12px]">·</span>
+                <span className="text-[12px] font-bold text-slate-400">{date}</span>
               </div>
             </div>
             

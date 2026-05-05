@@ -20,7 +20,7 @@ function DashboardMain() {
         <Route path="claim-requests" element={<ClaimRequests />} />
         <Route path="reports"        element={<Reports />} />
         <Route path="users"          element={<Users />} />
-        <Route path="moderator"          element={<ModeratorLostItems />} />
+        <Route path="moderator-lost"          element={<ModeratorLostItems />} />
       </Route>
     </Routes>
   );

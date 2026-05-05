@@ -443,8 +443,8 @@ async function handleClaimItem(item) {
         {/* header */}
         <div className="p-5 border-b flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center bg-gray-50/50">
           <div>
-            <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-widest">Lost Items</h3>
-            <p className="text-[10px] text-gray-400 italic mt-0.5">Manage all reported lost items</p>
+            <h3 className="text-[15px] font-black text-gray-800 uppercase tracking-widest">Lost Items</h3>
+            <p className="text-[12px] text-gray-400 italic mt-0.5">Manage all reported lost items</p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
             <input
@@ -464,37 +464,37 @@ async function handleClaimItem(item) {
           <table className="w-full text-left text-[11px] min-w-[600px]">
             <thead className="bg-gray-50 text-gray-400 font-black uppercase border-b text-[9px] tracking-widest">
               <tr>
-                <th className="p-4">ID</th>
-                <th className="p-4">Item Name</th>
-                <th className="p-4">Category</th>
-                <th className="p-4">Reported By</th>
-                <th className="p-4">Area</th>
-                <th className="p-4">Date and Time</th>
-                <th className="p-4 text-center">Status</th>
-                <th className="p-4 text-center">Actions</th>
+                <th className="p-4 text-[12px]">ID</th>
+                <th className="p-4 text-[12px]">Item Name</th>
+                <th className="p-4 text-[12px]">Category</th>
+                <th className="p-4 text-[12px]">Reported By</th>
+                <th className="p-4 text-[12px]">Area</th>
+                <th className="p-4 text-[12px]">Date and Time</th>
+                <th className="p-4 text-center text-[12px]">Status</th>
+                <th className="p-4 text-center text-[12px]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredLost.length > 0 ? (
                 filteredLost.map(item => (
                   <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="p-4 text-gray-400 font-bold">L{item.id}</td>
-                    <td className="p-4 font-black text-gray-700">{toTitleCase(item.title)}</td>
-                    <td className="p-4 text-gray-500">{toTitleCase(item.category)}</td>
-                    <td className="p-4 text-gray-500">{toTitleCase(item.poster_name)}</td>
-                  <td className="p-4 text-gray-500">{toTitleCase(item.location)}</td>
-                  <td className="p-4 text-gray-500">
-                    <span>{item.created_date}</span>    |   
+                    <td className="p-4 text-gray-400 font-bold text-[12px]">L{item.id}</td>
+                    <td className="p-4 font-black text-gray-700 text-[12px]">{toTitleCase(item.title)}</td>
+                    <td className="p-4 text-gray-500 text-[12px]">{toTitleCase(item.category)}</td>
+                    <td className="p-4 text-gray-500 text-[12px]">{toTitleCase(item.poster_name)}</td>
+                  <td className="p-4 text-gray-500 text-[12px]">{toTitleCase(item.location)}</td>
+                  <td className="p-4 text-gray-500 text-[12px]">
+                    <span>{item.created_date}</span>    ,  
                     
                       <span>    {item.created_time}</span>
                     </td>
                   <td className="p-4 text-center">
-                    <span className={`px-3 py-1 rounded-full font-bold text-[8px] uppercase ${statusColor(item.status)}`}>
+                    <span className={`px-3 py-1 rounded-full font-bold text-[9px] uppercase ${statusColor(item.status)}`}>
                       {item.status}
                     </span>
                   </td>
                   <td className="p-4 text-center">
-                    <div className="flex justify-center gap-2 text-[9px] font-black uppercase">
+                    <div className="flex justify-center gap-2 text-[12px] font-black uppercase">
                       <button onClick={() =>handleView(item)} className="text-blue-500 hover:underline">View</button>
                       <button onClick={() => handleEdit(item)} className="text-amber-500 hover:underline">Edit</button>
                       {role === 'Admin' && (

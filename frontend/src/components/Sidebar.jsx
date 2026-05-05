@@ -9,20 +9,17 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
 
   const normalizedRole = role?.toLowerCase();
 
+const menuItems = [
+  { id: 'Dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { id: 'Lost Items', label: 'Lost Items', icon: AlertTriangle, path: normalizedRole === 'moderator' ? '/dashboard/moderator-lost' : '/dashboard/lost-items'},
+  { id: 'Found Items', label: 'Found Items', icon: CheckCircle, path: '/dashboard/found-items' },
+  { id: 'Claim Requests', label: 'Claim Requests', icon: Bell, path: '/dashboard/claim-requests' },
+  { id: 'Reports', label: 'Reports', icon: BarChart2, path: '/dashboard/reports' },
+  ...(normalizedRole === 'admin'
+    ? [{ id: 'Users', label: 'Users', icon: Users, path: '/dashboard/users' }]
+    : []),
+];
 
-  const menuItems = [
-    { id: 'Dashboard',      label: 'Dashboard',      icon: LayoutDashboard, path: '/dashboard' },
-    { 
-      id: 'Lost Items',     
-      label: 'Lost Items',     
-      icon: AlertTriangle,   
-      path: normalizedRole === 'Moderator' ? '/dashboard/moderator' : '/dashboard/lost-items' 
-    },
-    { id: 'Found Items',    label: 'Found Items',    icon: CheckCircle,     path: '/dashboard/found-items' },
-    { id: 'Claim Requests', label: 'Claim Requests', icon: Bell,            path: '/dashboard/claim-requests' },
-    { id: 'Reports',        label: 'Reports',        icon: BarChart2,       path: '/dashboard/reports' },
-    { id: 'Users',          label: 'Users',          icon: Users,           path: '/dashboard/users' },
-  ];
 
   return (
     <aside className={`h-full bg-white border-r flex flex-col justify-between z-20 shadow-sm transition-all duration-300 ${isCollapsed ? 'w-[68px]' : 'w-64'}`}>
@@ -30,8 +27,8 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
       <div className="py-7 flex-1 overflow-y-auto">
         {/* Logo */}
         <div className={`px-6 mb-8 transition-all duration-300 overflow-hidden ${isCollapsed ? 'opacity-0 h-0 mb-0' : 'opacity-100'}`}>
-          <h2 className="text-[#2D366D] font-black text-xl italic tracking-tighter uppercase leading-none">Seek &amp; Balik</h2>
-          <div className="mt-2 inline-block px-2 py-1 bg-[#E8EFFF] rounded text-[9px] font-black text-[#2D366D] uppercase tracking-widest">
+          <h2 className="text-[#2D366D] font-black text-2xl italic tracking-tighter uppercase leading-none">Seek &amp; Balik</h2>
+          <div className="mt-2 inline-block px-2 py-1 bg-[#E8EFFF] rounded text-[11px] font-black text-[#2D366D] uppercase tracking-widest">
             {role} Panel
           </div>
         </div>
@@ -39,7 +36,6 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
         {/* Nav */}
         <nav className="px-3 space-y-1">
           {menuItems.map((item) => {
-            if (item.id === 'users' && normalizedRole !== 'admin') return null;
             const Icon = item.icon;
             const hasBadge = item.id === 'Claim Requests' && pendingClaimsCount > 0;
             const isActive = item.path === '/dashboard'
