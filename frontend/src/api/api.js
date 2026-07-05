@@ -1,80 +1,107 @@
 import axios from "axios";
 
-export const API_URL = 'http://localhost:8000/';
+export const API_URL = "http://localhost:8000/";
 
 const api = axios.create({
   baseURL: API_URL,
 });
 
-// FETCH ITEMS (LOST OR FOUND DEPENDS ON TYPE)
+export const createClaim = async (data) => {
+  const res = await api.post("claim/create/", data);
+  return res.data;
+};
+
+export const getClaims = async () => {
+  const res = await api.get("claim/");
+  return res.data;
+};
+
+export const scheduleMeeting = async (id, meeting_date) => {
+  const res = await api.put(`claim/schedule/${id}/`, {
+    meeting_date
+  });
+  return res.data;
+};
+// =====================
+// ITEMS
+// =====================
+
+// GET ALL ITEMS
 export async function getItems() {
-  const response = await api.get('item/details/');
+  const response = await api.get("item/details/");
   return response.data;
 }
 
-//ADDING LOST ITEMS
+// CREATE ITEM
 export async function createLostItem(formData) {
-  const response = await api.post('item/report/', formData, {
+  const response = await api.post("item/create/", formData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
   });
 
   return response.data;
 }
 
-//UPDATE ITEMS
+// UPDATE ITEM
 export async function editLostItem(id, data) {
-  const response = await api.put(`item/details/update/${id}/`, data, {
+  const response = await api.put(`item/details/${id}/`, data, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
   });
 
   return response.data;
 }
 
-//FETCH SPECIFIC ITEM DEPENDING ON ID FOR VIEWING
+// GET ITEM BY ID
 export async function getItemById(id) {
   const response = await api.get(`item/details/${id}/`);
   return response.data;
 }
 
+// =====================
+// TRACKING (🔥 FIXED)
+// =====================
 
-//LOGIN USER
+export async function trackItem(ticketCode) {
+  const response = await api.get(`item/track/${ticketCode}/`);
+  return response.data;
+}
+
+
+// =====================
+// AUTH (unchanged)
+// =====================
+
 export async function loginUser(username, password) {
-  const response = await api.post(`account/login/`, {
+  const response = await api.post("account/login/", {
     username,
     password,
   });
 
-  localStorage.setItem('accessToken', response.data.access);
-  localStorage.setItem('refreshToken', response.data.refresh);
+  localStorage.setItem("accessToken", response.data.access);
+  localStorage.setItem("refreshToken", response.data.refresh);
 
   return response.data;
 }
 
 export async function getUsers() {
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem("accessToken");
 
-  console.log('Token before users request:', token);
-
-  const response = await api.get('account/users/', {
+  const response = await api.get("account/users/", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
 
-  console.log('Users response:', response.data);
-
   return response.data;
 }
-
 
 export async function getCurrentUser() {
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem("accessToken");
 
-  const response = await api.get(`account/current/`, {
+  const response = await api.get("account/current/", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -83,9 +110,8 @@ export async function getCurrentUser() {
   return response.data;
 }
 
-
 export async function getUserById(id) {
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem("accessToken");
 
   const response = await api.get(`account/users/${id}/`, {
     headers: {
@@ -97,7 +123,7 @@ export async function getUserById(id) {
 }
 
 export async function updateUserById(id, data) {
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem("accessToken");
 
   const response = await api.put(`account/users/${id}/`, data, {
     headers: {
@@ -108,11 +134,10 @@ export async function updateUserById(id, data) {
   return response.data;
 }
 
-
 export async function createUser(data) {
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem("accessToken");
 
-  const response = await api.post('account/register/', data, {
+  const response = await api.post("account/register/", data, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

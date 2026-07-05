@@ -1,29 +1,46 @@
-import React from "react";
 import { Routes, Route } from "react-router-dom";
-import Dashboard from "../pages/Dashboard";
+
+import DashboardHome from "../pages/Dashboard";
 import LostItems from "../pages/LostItems";
 import FoundItems from "../pages/FoundItems";
-import ClaimRequests from "../pages/ClaimRequests";
 import Reports from "../pages/Reports";
 import Users from "../pages/Users";
-import DashboardLayout from "./DashboardLayout";
 import ModeratorLostItems from "../pages/ModeratorLostItems";
 
+import RequireRole from "../components/RequireRole";
 
-function DashboardMain() {
+const DashboardMain = () => {
   return (
     <Routes>
-      <Route element={<DashboardLayout />}>
-        <Route index                 element={<Dashboard />} />
-        <Route path="lost-items"     element={<LostItems />} />
-        <Route path="found-items"    element={<FoundItems />} />
-        <Route path="claim-requests" element={<ClaimRequests />} />
-        <Route path="reports"        element={<Reports />} />
-        <Route path="users"          element={<Users />} />
-        <Route path="moderator-lost"          element={<ModeratorLostItems />} />
-      </Route>
+
+      {/* COMMON (ADMIN + MODERATOR) */}
+      <Route path="/" element={<DashboardHome />} />
+      <Route path="lost-items" element={<LostItems />} />
+      <Route path="surrendered-items" element={<FoundItems />} />
+      <Route path="reports" element={<Reports />} />
+
+      {/* MODERATOR ONLY */}
+      <Route
+        path="moderator-lost"
+        element={
+          <RequireRole allowedRoles={["moderator"]}>
+            <ModeratorLostItems />
+          </RequireRole>
+        }
+      />
+
+      {/* ADMIN ONLY */}
+      <Route
+        path="users"
+        element={
+          <RequireRole allowedRoles={["admin"]}>
+            <Users />
+          </RequireRole>
+        }
+      />
+
     </Routes>
   );
-}
+};
 
 export default DashboardMain;

@@ -46,7 +46,7 @@ const PhotoUpload = ({ name, value, onChange }) => {
 
   return (
     <div>
-      <label className="label">Photo (optional)</label>
+      <label className="block text-m font-semibold uppercase text-slate-700 mb-2">Photo (optional)</label>
 
       {preview ? (
         <div className="relative w-full h-32 rounded-2xl overflow-hidden border border-slate-200">

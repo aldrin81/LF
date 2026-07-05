@@ -1,177 +1,253 @@
 import React, { useState } from 'react';
-import { useApp } from '../context/AppContext';
 import PhotoUpload from './PhotoUpload';
-import axios from 'axios';
 import { createLostItem } from '../api/api';
 
-const AREAS = ['Canteen','Gym','Highschool Grounds','Basement','Main Building','Sao Lobby','Parking Area'];
-const CATS  = ['Personal','Accessories','Id','Electronics','Keys', 'Valuables'];
+const AREAS = ['Canteen', 'Gym', 'Highschool Grounds', 'Basement', 'Main Building', 'Sao Lobby', 'Parking Area', 'Others'];
+const CATS = ['Personal', 'Accessories', 'Id', 'Electronics', 'Keys', 'Valuables'];
 
 const ReportLostModal = ({ onClose }) => {
-  const [report, setReport] = useState([]);
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [ticketCode, setTicketCode] = useState("");
   const [form, setForm] = useState({
-    title: "", category: "Personal", poster_name: "", location: "",
-    created_date: "", created_time: "", description: "", image: null,
-  });
+  title: "", category: "Personal", poster_name: "", email: "",
+  location: AREAS[0],
+  other_location: "",
+  created_date: "", created_time: "", description: "", image: null,
+});
 
-  async function handleSubmit(e) {
+  const finalLocation = form.location === "Others" ? form.other_location.trim() : form.location;
+
+  const maxDate = new Date().toLocaleDateString('en-CA');
+
+  const handleChange = (e) => {
+  const { name, value } = e.target;
+
+  setForm(prev => ({
+    ...prev,
+    [name]: value,
+    ...(name === "location" && value !== "Others" ? { other_location: "" } : {}),
+  }));
+};
+
+  const handleSubmit = (e) => {
   e.preventDefault();
 
-  const formData = new FormData();
-
-  formData.append("title", form.title);
-  formData.append("category", form.category);
-  formData.append("poster_name", form.poster_name);
-  formData.append("location", form.location);
-  formData.append("created_date", form.created_date);
-  formData.append("created_time", form.created_time);
-  formData.append("description", form.description);
-
-  if (form.image) {
-    formData.append("image", form.image);
+  if (
+    !form.title ||
+    !form.poster_name ||
+    !form.email ||
+    !form.created_date ||
+    (form.location === "Others" && !form.other_location.trim())
+  ) {
+    return;
   }
+
+  setShowConfirm(true);
+};
+
+  const confirmSubmit = async () => {
+  if (isSubmitting) return;
+
+  setIsSubmitting(true);
 
   try {
-    const data = await createLostItem(formData);
-    setSubmitted(true);
-    setForm({
-      title: "", category: "", poster_name: "", location: "",
-      created_date: "", created_time: "", description: "", image: null,
+    const formData = new FormData();
+
+    const finalLocation =
+      form.location === "Others"
+        ? form.other_location.trim()
+        : form.location;
+
+    Object.keys(form).forEach(key => {
+      if (key === "other_location") return;
+      if (key === "location") return;
+
+      if (form[key] !== null) {
+        formData.append(key, form[key]);
+      }
     });
-  } catch (error) {
-    console.error("Full error:", error);
-  }
-  }
 
-  function handleChange(e) {
-    const {name, value} = e.target;
+    formData.append("location", finalLocation);
 
-    setForm({...form, [name]: value});
+    const response = await createLostItem(formData);
 
+    setTicketCode(response.ticket_code);
+    setSubmitted(true);
+    setShowConfirm(false);
+  } catch (err) {
+    console.error(err);
+    alert("Failed to submit report.");
+  } finally {
+    setIsSubmitting(false);
   }
-  
+};
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-y-auto max-h-[92vh]">
+      onClick={(e) => e.target === e.currentTarget && onClose()}>
+
+      <div className="bg-white w-full max-w-4xl rounded-md shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
 
         {submitted ? (
-          <div className="p-10 text-center">
-            <div className="text-5xl mb-4">📋</div>
-            <h3 className="font-black text-[#2D366D] text-xl uppercase tracking-tight italic">Item Reported!</h3>
-            <p className="text-slate-400 text-xs font-sans mt-3 leading-relaxed max-w-xs mx-auto">
-              Your lost item has been posted to the board. Our staff will look for it. You'll be contacted if it's found.
+          <div className="p-10 text-center flex flex-col items-center">
+            <div className="text-6xl mb-6 animate-bounce">✅</div>
+            <h3 className="font-black text-[#2D366D] text-2xl uppercase tracking-tighter italic">Report Filed</h3>
+            <p className="text-slate-500 text-sm font-sans mt-4 leading-relaxed max-w-sm">
+              Your report is now in our registry. Updates will be sent to <b>{form.email}</b>.
+            </p>
+            <p className="text-slate-500 text-md font-sans mt-4 leading-relaxed max-w-sm">
+              Your ticket number is: <b>{ticketCode}</b>.
             </p>
             <button onClick={onClose}
-              className="mt-6 w-full bg-[#2D366D] text-white py-3 rounded-2xl font-black uppercase tracking-widest text-xs hover:opacity-90 transition-all font-sans">
-              Done
+              className="mt-8 w-60 bg-[#2D366D] text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:scale-[1.02] transition-all">
+              Return to Board
             </button>
           </div>
         ) : (
           <>
-            <div className="flex justify-between items-center px-7 py-5 border-b">
-              <div>
-                <h3 className="font-black text-[#2D366D] uppercase text-xs tracking-widest italic">Report a Lost Item</h3>
-                <p className="text-[9px] text-slate-400 font-sans mt-0.5">Fill in as much detail as possible</p>
-              </div>
-              <button onClick={onClose} className="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center text-sm">✕</button>
-            </div>
+            {/* Header */}
+            <div className="bg-[#0B6FA4] text-white px-5 py-4 flex justify-between items-start">
 
-            <div className="mx-7 mt-5 bg-blue-50 border border-blue-100 rounded-2xl p-4">
-              <p className="text-blue-700 text-[10px] font-black uppercase tracking-wide font-sans mb-1">ℹ How This Works</p>
-              <p className="text-blue-600 text-[10px] font-sans leading-relaxed">
-                Once submitted, your report appears on the public board. If someone finds it, they can turn it in to the SAO. Staff will contact you using the details you provide.
-              </p>
-            </div>
+  <div>
+    <h2 className="text-3xl font-bold">
+      Report Lost Item
+    </h2>
 
-            <form onSubmit={handleSubmit} className="p-7 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Item Name *</label>
-                  <input 
-                    className="inp" 
-                    type="text"
-                    name='title'
-                    value={form.title} 
-                    onChange={handleChange}
-                    placeholder="e.g. Black Wallet" 
-                    required />
+    <p className="text-blue-100 text-lg mt-1">
+      Submit details of your lost item
+    </p>
+  </div>
+
+  <button
+    onClick={onClose}
+    className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 transition flex items-center justify-center"
+  >
+    ✕
+  </button>
+
+</div>
+
+            {/* Form Container */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="block text-m font-semibold uppercase text-slate-700 mb-2">Item Name *</label>
+                  <input className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-xl text-slate-700 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-[#2D366D] focus:ring-4 focus:ring-slate-200"
+                    name="title" value={form.title} onChange={handleChange} placeholder="e.g. Blue Hydroflask" required />
                 </div>
-                <div>
-                  <label className="label">Your Full Name *</label>
-                  <input 
-                    className="inp" 
-                    type="text"
-                    name='poster_name'
-                    value={form.poster_name} 
-                    onChange={handleChange}
-                    placeholder="e.g. Juan Dela Cruz" 
-                    required />
+                <div className="space-y-1.5">
+                  <label className="block text-m font-semibold uppercase text-slate-700 mb-2">Owner Name *</label>
+                  <input className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-xl text-slate-700 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-[#2D366D] focus:ring-4 focus:ring-slate-200"
+                    name="poster_name" value={form.poster_name} onChange={handleChange} placeholder="Full Name" required />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Category *</label>
-                  <select 
-                    className="inp"
-                    name='category'
-                    value={form.category} 
-                    onChange={handleChange}>
-                    {CATS.map(c => <option key={c}>{c}</option>)}
+              <div className="space-y-1.5">
+                <label className="block text-m font-semibold uppercase text-slate-700 mb-2">Contact Email *</label>
+                <input className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-xl text-slate-700 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-[#2D366D] focus:ring-4 focus:ring-slate-200"
+                  type="email" name="email" value={form.email} onChange={handleChange} placeholder="student@slc.edu.ph" required />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="block text-m font-semibold uppercase text-slate-700 mb-2">Category *</label>
+                  <select className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-xl text-slate-700 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-[#2D366D] focus:ring-4 focus:ring-slate-200"
+                    name="category" value={form.category} onChange={handleChange}>
+                    {CATS.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="label">Where Was It Lost? *</label>
-                  <select 
-                    className="inp"
-                    name='location'
-                    value={form.location} 
-                    onChange={handleChange}>
-                    {AREAS.map(a => <option key={a}>{a}</option>)}
+                <div className="space-y-1.5">
+                  <label className="block text-m font-semibold uppercase text-slate-700 mb-2">Location Lost *</label>
+                  <select className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-xl text-slate-700 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-[#2D366D] focus:ring-4 focus:ring-slate-200"
+                    name="location" value={form.location} onChange={handleChange}>
+                    {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
+                  <input
+                    className="w-full mt-3 px-4 py-3 rounded-xl border border-slate-300 bg-white text-xl text-slate-700 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-[#2D366D] focus:ring-4 focus:ring-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                    name="other_location"
+                    value={form.other_location}
+                    onChange={handleChange}
+                    placeholder="Please specify location"
+                    disabled={form.location !== "Others"}
+                    required={form.location === "Others"}
+                  />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Date Lost *</label>
-                  <input className="inp" type="date" name='created_date' value={form.created_date} onChange={handleChange} required />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="block text-m font-semibold uppercase text-slate-700 mb-2">Date Lost *</label>
+                  <input className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-xl text-slate-700 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-[#2D366D] focus:ring-4 focus:ring-slate-200"
+                    type="date" name="created_date" value={form.created_date} onChange={handleChange} max={maxDate} required />
                 </div>
-                <div>
-                  <label className="label">Approximate Time</label>
-                  <input className="inp" type="time" name='created_time' value={form.created_time} onChange={handleChange} />
+                <div className="space-y-1.5">
+                  <label className="block text-m font-semibold uppercase text-slate-700 mb-2">Approx. Time</label>
+                  <input className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-xl text-slate-700 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-[#2D366D] focus:ring-4 focus:ring-slate-200"
+                    type="time" name="created_time" value={form.created_time} onChange={handleChange} />
                 </div>
               </div>
 
-              <div>
-                <label className="label">Description *</label>
-                <textarea className="inp resize-none" rows={3} name='description' value={form.description} onChange={handleChange}
-                  placeholder="Color, brand, distinguishing marks, what was inside... the more detail the better."
-                  required />
+              <div className="space-y-1.5">
+                <label className="block text-m font-semibold uppercase text-slate-700 mb-2">Description *</label>
+                <textarea className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-xl text-slate-700 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-[#2D366D] focus:ring-4 focus:ring-slate-200"
+                  rows={3} name="description" value={form.description} onChange={handleChange}
+                  placeholder="Mention unique marks, brand, stickers..." required />
               </div>
 
-              <PhotoUpload 
-                name='image' 
-                value={form.image} 
-                onChange={handleChange} />
+              <PhotoUpload name="image" value={form.image} onChange={handleChange} />
 
-              <div className="flex gap-3 pt-2">
-                <button type="submit"
-                  className="flex-1 bg-[#2D366D] text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all font-sans shadow-lg">
-                  Submit Report
-                </button>
-                <button type="button" onClick={onClose}
-                  className="flex-1 bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all font-sans">
-                  Cancel
-                </button>
+              <div className="flex gap-4 pt-4">
+
+  <button
+    type="button"
+    onClick={onClose}
+    className="flex-1 py-3 rounded-xl bg-[#E3E8F0] text-[#64748B] text-base font-bold uppercase tracking-wide transition duration-200 hover:bg-[#D5DDE8]"
+  >
+    Cancel
+  </button>
+                <button
+    type="submit"
+    className="flex-1 py-3 rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
+  >
+    Submit 
+  </button>
               </div>
             </form>
           </>
         )}
       </div>
+
+      {/* REFINED CONFIRMATION MODAL */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-[70] bg-[#2D366D]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-[32px] w-full max-w-xs text-center shadow-2xl border border-slate-100">
+            <div className="w-16 h-16 bg-blue-50 text-[#2D366D] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">📁</div>
+            <h3 className="font-black text-[#2D366D] uppercase tracking-tight italic text-lg">Confirm Report?</h3>
+            <p className="text-[11px] mt-3 text-slate-500 leading-relaxed font-medium">
+              Please double check the details. Once submitted, this record will be verified by the SAO.
+            </p>
+            <div className="flex flex-col gap-2 mt-6">
+              <button
+                onClick={confirmSubmit}
+                disabled={isSubmitting}
+                className="w-full bg-[#2D366D] disabled:bg-slate-400 disabled:cursor-not-allowed text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-[#1a214d] transition-all"
+              >
+                {isSubmitting ? "Submitting..." : "Yes, Submit Now"}
+              </button>
+              <button
+                onClick={() => setShowConfirm(false)}
+                disabled={isSubmitting}
+                className="w-full bg-slate-100 text-slate-400 py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

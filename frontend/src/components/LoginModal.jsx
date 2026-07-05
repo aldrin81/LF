@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
-import { loginUser, getCurrentUser } from '../api/api';
+import React, { useState } from "react";
+import { loginUser, getCurrentUser } from "../api/api";
+import { useApp } from "../context/AppContext";
+import { useNavigate } from "react-router-dom";
+import slcLogo from "../assets/slc-logo.png";
+import saoLogo from "../assets/sao.png";
 
-const LoginModal = ({ onLogin, onClose }) => {
-  const [error, setError] = useState('');
+
+const LoginModal = ({ onClose }) => {
+  const { setLogin } = useApp();
+  const navigate = useNavigate();
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -10,56 +19,169 @@ const LoginModal = ({ onLogin, onClose }) => {
     const username = e.target.username.value.trim();
     const password = e.target.password.value.trim();
 
+    setLoading(true);
+    setError("");
+
     try {
+      // login request
       await loginUser(username, password);
 
+      // fake loading (optional UI delay)
+      await new Promise((r) => setTimeout(r, 2000));
+
+      // get user info
       const currentUser = await getCurrentUser();
 
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userRole', currentUser.role);
+      // update context + localStorage
+      setLogin(currentUser.role);
 
-      onLogin(currentUser.role);
-    } catch (error) {
-      console.error('Login error:', error.response?.data || error);
-      setError('Invalid credentials. Please try again.');
+      // 🔥 IMPORTANT FIX (this prevents BACK to PublicLanding)
+      if (currentUser.role === "admin") {
+        navigate("/dashboard", { replace: true });
+      } else if (currentUser.role === "moderator") {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+
+      onClose();
+    } catch (err) {
+      console.error(err);
+      setError("Invalid credentials. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-10 border border-slate-100">
-        <div className="text-center mb-8">
-          <h2 className="font-black text-3xl uppercase tracking-tighter italic text-[#2D366D]">Seek &amp; Balik</h2>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-2 font-sans">Staff &amp; Moderator Access</p>
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-md p-6"
+    onClick={(e) => {
+      if (e.target === e.currentTarget && !loading) onClose();
+    }}
+  >
+    <div className="w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-[0_30px_80px_rgba(0,0,0,.25)]">
+
+      <div className="grid md:grid-cols-2">
+
+        {/* LEFT SIDE */}
+        <div className="bg-gradient-to-br from-[#0B648D] to-[#155F87] text-white p-12 flex flex-col justify-center">
+
+          <div className="flex justify-center gap-4 mb-8">
+            <img
+  src={slcLogo}
+  alt="SLC Logo"
+  className="w-16 h-16 object-contain bg-white rounded-full p-1"
+/>
+
+<img
+  src={saoLogo}
+  alt="Seek & Balik Logo"
+  className="w-16 h-16 object-contain bg-white rounded-full p-1"
+/>
+          </div>
+
+          <h1 className="text-5xl font-serif leading-tight">
+            Saint Louis College
+          </h1>
+
+          <p className="italic text-blue-100 mt-2">
+            City of San Fernando, La Union
+          </p>
+
+          <div className="w-104 h-[2px] bg-white/40 my-8"></div>
+
+          <h2 className="text-3xl font-black tracking-widest">
+            SEEK & BALIK
+          </h2>
+
+          <p className="text-blue-100 mt-3 text-lg">
+            Lost and Found Management System
+          </p>
+
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <p className="text-red-500 text-xs text-center font-bold font-sans">{error}</p>}
+        {/* RIGHT SIDE */}
+        <div className="p-14 flex flex-col justify-center">
 
-          <div>
-            <label className="label">Username</label>
-            <input name="username" type="text" className="inp" placeholder="Username" required />
+          <div className="flex justify-between items-center mb-8">
+
+            <div>
+              <h2 className="text-3xl font-bold text-[#154B70]">
+                Welcome Back
+              </h2>
+
+              <p className="text-gray-500 mt-2">
+                Log in to continue.
+              </p>
+            </div>
+
           </div>
 
-          <div>
-            <label className="label">Password</label>
-            <input name="password" type="password" className="inp" placeholder="Password" required />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-5">
 
-          <button type="submit" className="w-full bg-[#2D366D] text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg hover:opacity-90 transition-all font-sans">
-            Login
-          </button>
-        </form>
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
 
-        <button onClick={onClose} className="w-full text-center mt-4 text-slate-400 text-[11px] font-bold font-sans hover:text-slate-600 transition-colors">
-          Cancel
-        </button>
+            <div>
+              <label className="text-sm font-semibold text-[#154B70]">
+                Username
+              </label>
+
+              <input
+                name="username"
+                type="text"
+                required
+                disabled={loading}
+                placeholder="Enter your username"
+                className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-[#0B648D] focus:ring-4 focus:ring-[#0B648D]/20 outline-none transition"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-[#154B70]">
+                Password
+              </label>
+
+              <input
+                name="password"
+                type="password"
+                required
+                disabled={loading}
+                placeholder="Enter your password"
+                className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-[#0B648D] focus:ring-4 focus:ring-[#0B648D]/20 outline-none transition"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-3 w-full rounded-xl bg-[#0B648D] py-3 text-lg font-semibold text-white transition hover:bg-[#094f70] active:scale-[.98]"
+            >
+                LOGIN 
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="w-full rounded-xl border border-[#0B648D] py-3 font-medium text-[#0B648D] transition hover:bg-blue-50"
+            >
+              CANCEL
+            </button>
+
+          </form>
+
+        </div>
+
       </div>
+
     </div>
-  );
-};
+  </div>
+);
+}
 
 export default LoginModal;

@@ -13,10 +13,11 @@ const AppInner = () => {
   const navigate = useNavigate();
 
   const handleLogin = (role) => {
-    setLogin(role);
-    setShowLogin(false);
-    navigate('/dashboard');
-  };
+  setLogin(role);
+  setShowLogin(false);
+
+  navigate('/dashboard', { replace: true });
+};
 
   return (
     <>

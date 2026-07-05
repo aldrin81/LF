@@ -1,9 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap');
 @import "tailwindcss";
 
 @theme {
+  --font-old-english: "old-english", serif;
   --color-slc-blue: #2d366d;
   --color-dashboard-bg: #f4f7fe;
 }
+@font-face {
+  font-family: "old-english";
+  src: url("../font/Canterbury.ttf") format("truetype");
+}
+
+
+  html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+body {
+  background-color: var(--color-dashboard-bg);
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   background-color: var(--color-dashboard-bg);

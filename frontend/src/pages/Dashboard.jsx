@@ -1,208 +1,257 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, Package, Users, TrendingUp } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { AlertCircle, CheckCircle2, Package, Users, ShieldAlert, Sparkles, Activity } from 'lucide-react';
 import { getItems, getUsers } from '../api/api';
 
 const statusColor = (s) =>
-  s === 'Claimed'   ? 'bg-purple-100 text-purple-500' :
-  s === 'Pending'   ? 'bg-orange-100 text-orange-500' :
-  s === 'Approved' ? 'bg-green-100 text-green-500'   :
-  'bg-gray-400 text-white';
+  s === 'Claimed'  ? 'bg-purple-50 text-purple-600 border border-purple-100' :
+  s === 'Pending'  ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+  s === 'Approved' ? 'bg-green-50 text-green-600 border border-green-100'  :
+  'bg-slate-100 text-slate-500 border border-slate-200';
 
-const StatCard = ({ label, count, icon: Icon, color, bgColor, trend }) => (
-  <div className={`bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative`}>
-    <div className={`absolute -right-2 -bottom-2 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110`}>
-      <Icon size={80} />
+const StatCard = ({ label, count, icon: Icon, color, bgColor, description }) => (
+  <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group relative flex flex-col justify-between overflow-hidden">
+    <div className={`absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.07] transition-all duration-500 transform group-hover:scale-125 group-hover:-rotate-12 text-slate-900`}>
+      <Icon size={120} />
     </div>
+    
     <div className="flex justify-between items-start relative z-10">
       <div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
-        <h3 className="text-3xl font-black text-slate-800">{count}</h3>
+        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 mb-1.5">{label}</p>
+        <h3 className="text-3xl font-black text-slate-800 tracking-tight font-sans">{count}</h3>
       </div>
-      <div className={`${bgColor} ${color} p-3 rounded-xl shadow-inner`}>
-        <Icon size={23} />
+      <div className={`${bgColor} ${color} p-3 rounded-2xl shadow-sm border border-white/50 group-hover:scale-110 transition-transform duration-300`}>
+        <Icon size={20} className="stroke-[2.5]" />
       </div>
+    </div>
+
+    <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between relative z-10">
+      <span className="text-[11px] font-medium text-slate-400 tracking-wide w-full">{description}</span>
     </div>
   </div>
 );
 
-const Dashboard = ({ role }) => {
+const Dashboard = () => {
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
 
-
   useEffect(() => {
     fetchItems();
     fetchUsers();
-  }, [])
+
+    const interval = setInterval(() => {
+      fetchItems();
+      fetchUsers();
+    }, 5000); // Safely keeps analytics synchronized
+
+    return () => clearInterval(interval);
+  }, []);
 
   async function fetchItems() {
-    try{
-    const data = await getItems();
-    setItems(data);
-  } catch (error) {
-    console.error('Fetching of items error: ', error)
+    try {
+      const data = await getItems();
+      setItems(data || []);
+    } catch (error) {
+      console.error('Fetching of items error: ', error);
+    }
   }
-}
 
   async function fetchUsers() {
     try {
       const data = await getUsers();
-      setUsers(data);
+      setUsers(data || []);
     } catch (error) {
-      console.error('Fetching of users error: ', error)
+      console.error('Fetching of users error: ', error);
     }
   }
 
-  const totalLost    = items.filter(i => i.type === 'Lost').length
-  const totalFound   = items.filter(i => i.type === 'Found').length
-  const totalClaimed = items.filter(i => i.status === 'Claimed').length
-  const totalUsers   = users.length;
-  const recoveryPct  = totalLost === 0 ? 0 : Math.round((items.filter(i=>i.status==='Claimed').length / totalLost) * 100);
+  const totalLost = items.filter(i => i.type === 'Lost').length;
+  const totalSurrendered = items.filter(i => i.type === 'Surrendered').length;
+  const totalClaimed = items.filter(i => i.status === 'Claimed').length;
+  const totalUsers = users.length;
+  const recoveryPct = totalLost === 0 ? 0 : Math.round((totalClaimed / totalLost) * 100);
+  const pendingCount = items.filter(i => i.status === 'Pending').length;
 
-const recent = items
-  .map((item) => ({
-    ...item,
-    itemType: item.type
-  }))
-  .sort((a, b) => b.id - a.id).slice(0, 7)
+  const recent = [...items]
+    .map((item) => ({ ...item, itemType: item.type }))
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 6);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500 font-sans pb-10">
       
-      {/* Welcome Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#2D366D] to-[#3D498D] rounded-3xl p-8 text-white shadow-xl">
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="text-center md:text-left">
-            <h2 className="text-3xl font-black italic tracking-tight uppercase">Dashboard Overview</h2>
-            <p className="text-white/70 text-xs font-medium mt-2 max-w-md leading-relaxed uppercase tracking-wider">
-              Monitoring the campus pulse. You have <span className="text-white font-bold underline underline-offset-4 decoration-orange-400">
-              {items.filter(i=>i.status==='Pending').length} pending reports</span> that require your attention today.
+      {/* ─── Hero Module ─── */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#2D366D] via-[#354082] to-[#1E254E] rounded-[32px] p-8 md:p-10 text-white shadow-xl border border-slate-800/10">
+        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 mb-4">
+              <Sparkles size={12} className="text-orange-400 fill-orange-400" />
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-300">Live Campus Pulse</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black italic tracking-tight uppercase text-white drop-shadow-sm">
+              Dashboard Overview
+            </h2>
+            <p className="text-white/70 text-xs font-medium mt-2 max-w-xl leading-relaxed uppercase tracking-wider">
+              Centralized monitoring desk. You have <span className="text-white font-black underline underline-offset-4 decoration-orange-400 bg-white/5 px-1.5 py-0.5 rounded">{pendingCount} verification cycles</span> pending operational approval today.
             </p>
           </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex items-center gap-4">
-            <div className="text-center px-4 border-r border-white/10">
-              <p className="text-[9px] font-black uppercase tracking-tighter opacity-60">Recovery</p>
-              <p className="text-2xl font-black">{recoveryPct}%</p>
+          
+          <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-white/10 flex items-center gap-6 w-full lg:w-auto justify-around lg:justify-start">
+            <div className="text-center pr-6 lg:border-r border-white/10">
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] opacity-50 mb-1">Global Recovery</p>
+              <p className="text-3xl font-black text-orange-400 tracking-tight">{recoveryPct}%</p>
             </div>
-            <div className="text-center px-4">
-              <p className="text-[9px] font-black uppercase tracking-tighter opacity-60">Active Users</p>
-              <p className="text-2xl font-black">{totalUsers}</p>
+            <div className="text-center">
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] opacity-50 mb-1">System Capacity</p>
+              <p className="text-3xl font-black text-white tracking-tight">{totalUsers} <span className="text-xs text-white/40 font-normal">ops</span></p>
             </div>
           </div>
         </div>
-        {/* Decorative Circles */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-orange-400/10 rounded-full blur-3xl"></div>
+        {/* Abstract Geometry overlays */}
+        <div className="absolute -top-32 -right-32 w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
       </div>
 
-      {/* Stats Grid */}
+      {/* ─── Metric Dash-Cards Grid ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Lost Items"    count={totalLost}    icon={AlertCircle}  color="text-red-500"/>
-        <StatCard label="Found Items"   count={totalFound}   icon={CheckCircle2} color="text-green-500"/>
-        <StatCard label="Items Claimed" count={totalClaimed} icon={Package}      color="text-purple-500"/>
-        <StatCard label="System Users"  count={totalUsers}   icon={Users}        color="text-blue-500"   bgColor="bg-blue-50" />
+        <StatCard label="Lost Reports" count={totalLost} icon={AlertCircle} color="text-rose-500" bgColor="bg-rose-50" description="Unresolved asset searches" />
+        <StatCard label="Surrendered Items" count={totalSurrendered} icon={CheckCircle2} color="text-emerald-500" bgColor="bg-emerald-50" description="Awaiting identity match" />
+        <StatCard label="Resolved Matches" count={totalClaimed} icon={Package} color="text-purple-500" bgColor="bg-purple-50" description="Successfully turned over" />
+        <StatCard label="System Operators" count={totalUsers} icon={Users} color="text-indigo-500" bgColor="bg-indigo-50" description="Authorized active roles" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Items Table */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-6 border-b bg-slate-50/50 flex justify-between items-center">
+      {/* ─── Main Content Layers ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        
+        {/* Left Side: Recent Items Table Layer */}
+        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
+          <div className="p-6 sm:p-7 border-b border-slate-100 bg-slate-50/40 flex justify-between items-center">
             <div>
-              <h3 className="text-[15px] font-black text-slate-800 uppercase tracking-widest font-sans">Recent Reported Items</h3>
-              <p className="text-[12px] text-gray-400 font-sans italic mt-0.5">Real-time updates from the community</p>
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] italic">Recent Registry Stream</h3>
+              <p className="text-[11px] text-slate-400 font-sans italic mt-0.5">Real-time telemetry from institutional platforms</p>
             </div>
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
           </div>
-          <div className="overflow-x-auto flex-1">
-            <table className="w-full text-left text-[11px] font-sans">
-              <thead className="bg-slate-50 text-slate-400 font-black uppercase border-b text-[9px] tracking-widest">
-                <tr>
-                  <th className="p-4 pl-6 text-[12px]">Item Detail</th>
-                  <th className="p-4 text-center text-[12px]">Type</th>
-                  <th className="p-4 text-[12px]">Location</th>
-                  <th className="p-4 text-[12px]">Date and Time</th>
-                  <th className="p-4 text-center text-[12px]">Status</th>
+          
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-xs min-w-[750px] table-fixed border-collapse">
+              <thead>
+                <tr className="bg-slate-50/70 text-slate-400 font-black uppercase border-b border-slate-100 text-[9px] tracking-[0.15em]">
+                  <th className="p-4 pl-6 w-[32%]">Item Core Detail</th>
+                  <th className="p-4 text-center w-[13%]">Classification</th>
+                  <th className="p-4 w-[25%]">Discovery Location</th>
+                  <th className="p-4 w-[18%]">Timestamp</th>
+                  <th className="p-4 text-center w-[12%]">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {recent.map((item, i) => (
-                  <tr key={i} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="p-4 pl-6">
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <p className="font-black text-slate-700 capitalize tracking-tight text-[12px]">{item.title}</p>
-                          <p className="text-[9px] text-slate-400 font-bold text-[12px]">{item.date}</p>
-                        </div>
-                      </div>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {recent.map((item, idx) => (
+                  <tr key={item.id || idx} className="hover:bg-blue-50/30 transition-all duration-200 group h-[74px]">
+                    
+                    <td className="p-4 pl-6 truncate align-middle">
+                      <p className="font-black text-slate-800 capitalize tracking-tight text-[13px] group-hover:text-[#2D366D] transition-colors truncate">{item.title}</p>
+                      <span className="inline-block text-[10px] text-slate-400 font-mono mt-0.5 bg-slate-100 px-1.5 py-0.5 rounded">
+                        #ID-{String(item.id || idx).padStart(4, '0')}
+                      </span>
                     </td>
-                    <td className="p-4 text-center">
-                      <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase ${item.itemType === 'Lost' ? 'bg-red-100 text-red-500' : 'bg-green-100 text-green-600'}`}>
+                    
+                    <td className="p-4 text-center align-middle">
+                      <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${item.itemType === 'Lost' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
                         {item.itemType}
                       </span>
                     </td>
-                    <td className="p-4 text-slate-500 font-bold text-[12px]">{item.location}</td>
-                    <td className="p-4 text-slate-500 font-bold text-[12px]">
-                      <span>{item.created_date}   ,   </span>
-                      <span>{item.created_time}</span>
+                    
+                    <td className="p-4 text-slate-500 font-bold tracking-tight truncate align-middle">
+                      📍 {item.location}
                     </td>
-                    <td className="p-4 text-center">
-                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${statusColor(item.status)}`}>
+                    
+                    <td className="p-4 text-slate-400 text-[11px] font-medium align-middle">
+                      <p className="text-slate-700 font-bold">{item.created_date || item.date}</p>
+                      <p className="text-[10px] font-mono text-slate-400 mt-0.5">{item.created_time || '00:00 AM'}</p>
+                    </td>
+                    
+                    <td className="p-4 text-center align-middle">
+                      <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${statusColor(item.status)}`}>
                         {item.status}
                       </span>
                     </td>
+
                   </tr>
                 ))}
+                
                 {recent.length === 0 && (
-                  <tr><td colSpan={4} className="p-12 text-center text-slate-300 italic text-sm">No recent activity detected.</td></tr>
+                  <tr>
+                    <td colSpan={5} className="p-24 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-300 gap-2">
+                        <Activity size={32} className="opacity-20 animate-pulse text-slate-400" />
+                        <p className="text-xs font-black tracking-[0.15em] uppercase text-slate-400">
+                          No active telemetry detected
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Action Center / Tips */}
+        {/* Right Side: Operational Insights Sidebar */}
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest font-sans mb-4 border-b pb-4">Quick Insights</h3>
-            <div className="space-y-5">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <AlertCircle size={20} />
+          
+          {/* Insights Box */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm">
+            <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] mb-4 border-b pb-4 italic">Quick Analytics</h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-2xl transition-colors">
+                <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border border-orange-100">
+                  <ShieldAlert size={18} className="stroke-[2.5]" />
                 </div>
                 <div>
-                  <p className="text-[12px] font-black text-slate-700 uppercase">Attention Needed</p>
-                  <p className="text-[12px] text-slate-400 font-medium">{items.filter(i=>i.status==='Pending').length} unapproved reports</p>
+                  <p className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Unverified Logs</p>
+                  <p className="text-xs text-slate-400 font-bold mt-0.5">{pendingCount} workflows awaiting validation</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <TrendingUp size={20} />
+              
+              <div className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-2xl transition-colors">
+                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border border-blue-100">
+                  <Activity size={18} className="stroke-[2.5]" />
                 </div>
                 <div>
-                  <p className="text-[12px] font-black text-slate-700 uppercase">Success Rate</p>
-                  <p className="text-[12px] text-slate-400 font-medium">Higher than last month</p>
+                  <p className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Turnover Rate</p>
+                  <p className="text-xs text-slate-400 font-bold mt-0.5">Optimized resolution acceleration</p>
                 </div>
               </div>
             </div>
-            <div className="mt-8 pt-6 border-t">
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                <p className="text-[11px] font-black text-[#2D366D] uppercase tracking-widest mb-2">Pro Tip</p>
-                <p className="text-[11px] text-slate-500 leading-relaxed italic">
-                  "Encourage students to upload photos. Reports with images are resolved 40% faster."
+
+            <div className="mt-6 pt-5 border-t border-slate-100">
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 relative overflow-hidden">
+                <p className="text-[10px] font-black text-[#2D366D] uppercase tracking-[0.15em] mb-1.5">System Pro-Tip</p>
+                <p className="text-[11px] text-slate-500 leading-relaxed italic font-medium">
+                  "Encourage digital imagery uploads. Clear item captures directly decrease verification processing delays by approximately 40%."
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-orange-400 to-orange-500 rounded-2xl p-6 text-white shadow-lg shadow-orange-200">
-            <h4 className="text-sm font-black uppercase italic tracking-tighter">System Notice</h4>
-            <p className="text-[11px] opacity-90 mt-2 font-medium leading-relaxed">
-              Database synchronization with SAO records scheduled for 12:00 AM tonight. Expect brief downtime.
+          <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden border border-slate-800">
+            <div className="absolute right-0 top-0 bg-gradient-to-bl from-orange-500/20 to-transparent w-24 h-24 rounded-bl-full pointer-events-none"></div>
+            <div className="flex items-center gap-2 text-orange-400 mb-2">
+              <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse"></span>
+              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] italic">System Architecture Notice</h4>
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+              Database layer consolidation with SAO student registries is slated for <span className="text-white font-bold">12:00 AM PHT</span>. Short system access latencies may occur.
             </p>
           </div>
+          
         </div>
+
       </div>
     </div>
   );

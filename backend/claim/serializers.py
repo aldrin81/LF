@@ -1,9 +1,13 @@
+from datetime import date
 from rest_framework import serializers
 from .models import Claim
 
-class ClaimSerializers(serializers.ModelSerializer):
+class ClaimSerializer(serializers.ModelSerializer):
     class Meta:
         model = Claim
-        fields = '__all__' #palitan mo ito fields sa models
+        fields = "__all__"
 
-    #gawa function pang validate ng data
+    def validate_meeting_date(self, value):
+        if value and value < date.today():
+            raise serializers.ValidationError("Meeting date cannot be in the past.")
+        return value

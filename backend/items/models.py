@@ -1,7 +1,8 @@
 from django.db import models
+import uuid
 
-# Create your models here.
 class ItemDetails(models.Model):
+
     LOCATIONS = [
         ("All", "All"),
         ("Canteen", "Canteen"),
@@ -25,7 +26,7 @@ class ItemDetails(models.Model):
 
     ITEM_TYPE = [
         ("Lost", "Lost"),
-        ("Found", "Found"),
+        ("Surrendered", "Surrendered"),
     ]
 
     STATUS_OPTION = [
@@ -35,29 +36,30 @@ class ItemDetails(models.Model):
         ("Returned", "Returned"),
         ("Archived", "Archived"),
     ]
+
     title = models.CharField(max_length=30)
     description = models.TextField(max_length=100, default='')
     category = models.CharField(choices=CATEGORIES, default="All", max_length=30)
-    location = models.CharField(choices=LOCATIONS, default="All", max_length=30)
+    location = models.CharField(default="All", max_length=30)
     created_date = models.DateField()
     created_time = models.TimeField()
     image = models.ImageField(upload_to='items_photos/', null=True, blank=True)
     status = models.CharField(choices=STATUS_OPTION, max_length=30, default="Pending")
     type = models.CharField(choices=ITEM_TYPE, max_length=30, default="Lost")
     poster_name = models.CharField(max_length=30, default='')
-    poster_contact = models.CharField(max_length=30, default='')
-    
+    email = models.CharField(max_length=30, default='')
+
+    # 🔥 TICKET SYSTEM
+    ticket_code = models.CharField(max_length=20, unique=True, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+
+        super().save(*args, **kwargs)
+
+        if is_new and not self.ticket_code:
+            self.ticket_code = f"SLC-{self.id}-{uuid.uuid4().hex[:4].upper()}"
+            super().save(update_fields=["ticket_code"])
 
     def __str__(self):
         return f"{self.title} {self.type} {self.status}"
-
-class declinedItems(models.Model):
-    item_name = models.CharField(max_length=30)
-    item_category = models.CharField(max_length=30)
-    item_location = models.CharField(max_length=30)
-    item_date_and_time = models.DateTimeField(max_length=15)
-    item_image = models.ImageField(upload_to='declined_items_photos/', null=True, blank=True)
-    item_status = models.CharField(max_length=5)
-
-    def __str__(self):
-        return f"{self.item_name} {self.item_status}"

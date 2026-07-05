@@ -7,10 +7,9 @@ const ROLES = [
   { label: 'Moderator', value: 'moderator' },
 ];
 
-
 const roleColor = (r) =>
   r === 'admin'     ? 'bg-green-100 text-green-600'  :
-  r === 'moderator' ? 'bg-purple-100 text-purple-500':
+  r === 'moderator' ? 'bg-purple-100 text-purple-500' :
   'bg-blue-100 text-blue-500';
 
 const statusColor = (user) => {
@@ -23,13 +22,25 @@ const statusText = (user) => {
   return user.is_active ? 'Active' : 'Inactive';
 };
 
+const EMPTY = { 
+  id: '', 
+  username: '', 
+  first_name: '', 
+  last_name: '', 
+  email: '', 
+  role: 'moderator', 
+  is_active: null, 
+  created_at: '', 
+  updated_at: '', 
+  is_archived: false, 
+};
 
-const EMPTY = { id:'', username:'', first_name:'', last_name:'', email:'', role: 'moderator', is_active: null, created_at: '', updated_at: '', is_archived: false, };
-
+// ─── User Modal (Add / Edit / View) ──────────────────────────────────────────
 const UserModal = ({ user, onSave, onClose, mode = 'edit' }) => {
   const [form, setForm] = useState(user || EMPTY);
   const isEdit = !!user && mode !== 'view';
   const isView = mode === 'view';
+  
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   return (
@@ -37,12 +48,17 @@ const UserModal = ({ user, onSave, onClose, mode = 'edit' }) => {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100">
+      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-y-auto max-h-[90vh]">
         <div className="flex justify-between items-center px-7 py-5 border-b">
           <h3 className="font-black text-[#2D366D] uppercase text-xs tracking-widest italic">
             {isView ? 'View User' : isEdit ? 'Edit User' : 'Add User'}
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center text-sm">✕</button>
+          <button 
+            onClick={onClose} 
+            className="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center text-sm"
+          >
+            ✕
+          </button>
         </div>
 
         <form
@@ -52,7 +68,6 @@ const UserModal = ({ user, onSave, onClose, mode = 'edit' }) => {
           }}
           className="p-7 space-y-4"
         >
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">First Name</label>
@@ -178,6 +193,7 @@ const UserModal = ({ user, onSave, onClose, mode = 'edit' }) => {
   );
 };
 
+// ─── Archive Confirmation Modal ──────────────────────────────────────────────
 const ConfirmModal = ({ message, onConfirm, onClose }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
     <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-8 text-center border border-slate-100">
@@ -192,140 +208,134 @@ const ConfirmModal = ({ message, onConfirm, onClose }) => (
   </div>
 );
 
+// ─── Main Users Module ───────────────────────────────────────────────────────
 const Users = () => {
-  const [search,    setSearch]    = useState('');
-  const [addOpen,   setAddOpen]   = useState(false);
-  const [editUser,  setEditUser]  = useState(null);
-  const [archiveUser, setArchiveUser]   = useState(null);
-  const [viewUser,   setViewUser]   = useState(null);
+  const [search, setSearch] = useState('');
+  const [addOpen, setAddOpen] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+  const [archiveUser, setArchiveUser] = useState(null);
+  const [viewUser, setViewUser] = useState(null);
   const [user, setUser] = useState([]);
 
   useEffect(() => {
     fetchUsers();
 
     const interval = setInterval(() => {
-    fetchUsers();
-  }, 5000); // fetch every 5 seconds
+      fetchUsers();
+    }, 5000); // Polling safely every 5 seconds
 
-  return () => clearInterval(interval);
-  }, [])
+    return () => clearInterval(interval);
+  }, []);
 
   async function fetchUsers() {
     try {
       const data = await getUsers();
       setUser(data);
     } catch (error) {
-      console.log("Fetching error: ", error)
+      console.log("Fetching error: ", error);
     }
   }
-  
 
   async function handleEdit(user) {
-  try {
-    const data = await getUserById(user.id);
-    setEditUser(data);
-  } catch (error) {
-    console.error('Error fetching user details:', error.response?.data || error);
-    setEditUser(user);
+    try {
+      const data = await getUserById(user.id);
+      setEditUser(data);
+    } catch (error) {
+      console.error('Error fetching user details:', error.response?.data || error);
+      setEditUser(user);
+    }
   }
-}
 
-async function handleSaveEdit(updatedUser) {
-  try {
-    await updateUserById(editUser.id, {
-      username: updatedUser.username,
-      first_name: updatedUser.first_name,
-      last_name: updatedUser.last_name,
-      email: updatedUser.email,
-      role: updatedUser.role,
-      is_active: updatedUser.is_active,
-      
-    });
+  async function handleSaveEdit(updatedUser) {
+    try {
+      await updateUserById(editUser.id, {
+        username: updatedUser.username,
+        first_name: updatedUser.first_name,
+        last_name: updatedUser.last_name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        is_active: updatedUser.is_active,
+      });
       await fetchUsers();
-      window.alert('Item updated successfully!');
-    setEditUser(null);
-  } catch (error) {
-    console.error('Error updating user:', error.response?.data || error);
-    alert('Failed to update user.');
+      window.alert('User updated successfully!');
+      setEditUser(null);
+    } catch (error) {
+      console.error('Error updating user:', error.response?.data || error);
+      alert('Failed to update user.');
+    }
   }
-}
 
-async function handleAddUser(newUser) {
-  try {
-    await createUser({
-      username: newUser.username,
-      first_name: newUser.first_name,
-      last_name: newUser.last_name,
-      email: newUser.email,
-      role: newUser.role || 'moderator',
-      password: newUser.password,
-      is_active: true,
-    });
+  async function handleAddUser(newUser) {
+    try {
+      await createUser({
+        username: newUser.username,
+        first_name: newUser.first_name,
+        last_name: newUser.last_name,
+        email: newUser.email,
+        role: newUser.role || 'moderator',
+        password: newUser.password,
+        is_active: true,
+      });
 
-    const refreshedUsers = await getUsers();
-    setUser(refreshedUsers);
+      const refreshedUsers = await getUsers();
+      setUser(refreshedUsers);
 
-    setAddOpen(false);
-    window.alert('User added successfully!');
-  } catch (error) {
-    console.error('Error adding user:', error.response?.data || error);
-    alert(JSON.stringify(error.response?.data || 'Failed to add user.'));
+      setAddOpen(false);
+      window.alert('User added successfully!');
+    } catch (error) {
+      console.error('Error adding user:', error.response?.data || error);
+      alert(JSON.stringify(error.response?.data || 'Failed to add user.'));
+    }
   }
-}
 
-async function handleView(user) {
-  try {
-    const data = await getUserById(user.id);
-    setViewUser(data);
-  } catch (error) {
-    console.error('Error fetching user details:', error.response?.data || error);
-    setViewUser(user);
+  async function handleView(user) {
+    try {
+      const data = await getUserById(user.id);
+      setViewUser(data);
+    } catch (error) {
+      console.error('Error fetching user details:', error.response?.data || error);
+      setViewUser(user);
+    }
   }
-}
 
-async function handleArchiveUser(user) {
-  try {
-    await updateUserById(user.id, {
-      username: user.username,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      role: user.role,
-      is_active: user.is_active,
-      is_archived: true,
-    });
+  async function handleArchiveUser(user) {
+    try {
+      await updateUserById(user.id, {
+        username: user.username,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        role: user.role,
+        is_active: user.is_active,
+        is_archived: true,
+      });
 
-    await fetchUsers();
-    setArchiveUser(null);
-    window.alert('User archived successfully!');
-  } catch (error) {
-    console.error('Error archiving user:', error.response?.data || error);
-    alert(JSON.stringify(error.response?.data || 'Failed to archive user.'));
+      await fetchUsers();
+      setArchiveUser(null);
+      window.alert('User archived successfully!');
+    } catch (error) {
+      console.error('Error archiving user:', error.response?.data || error);
+      alert(JSON.stringify(error.response?.data || 'Failed to archive user.'));
+    }
   }
-}
-
-
-
-
 
   const filtered = user.filter((u) => {
-  const searchText = search.toLowerCase();
-  const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username;
+    const searchText = search.toLowerCase();
+    const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username;
 
-  return (
-    u.is_archived === false && (
-      fullName.toLowerCase().includes(searchText) ||
-      String(u.id).includes(searchText) ||
-      u.username?.toLowerCase().includes(searchText) ||
-      u.email?.toLowerCase().includes(searchText) ||
-      u.role?.toLowerCase().includes(searchText)
-    )
-  );
-});
+    return (
+      u.is_archived === false && (
+        fullName.toLowerCase().includes(searchText) ||
+        String(u.id).includes(searchText) ||
+        u.username?.toLowerCase().includes(searchText) ||
+        u.email?.toLowerCase().includes(searchText) ||
+        u.role?.toLowerCase().includes(searchText)
+      )
+    );
+  });
 
-function toTitleCase(text) {
+  function toTitleCase(text) {
     if (!text) return "";
-
     return text
       .toLowerCase()
       .split(" ")
@@ -333,85 +343,162 @@ function toTitleCase(text) {
       .join(" ");
   }
 
-
   return (
-    <div className="bg-white rounded-xl border shadow-sm overflow-hidden font-sans">
-      <div className="p-5 border-b flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center bg-gray-50/50">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(109vh-260px)]">
+      
+      {/* Control Header */}
+      {/* Header */}
+  <div className="bg-white px-6 sm:px-8 py-6 border-b border-[#D8E2EF] shrink-0">
+    <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
+
+      <div className="flex items-center gap-3">
+        <div className="w-1.5 h-10 rounded-full " />
+
         <div>
-          <h3 className="text-[15px] font-black text-gray-800 uppercase tracking-widest">Registered Users</h3>
-          <p className="text-[12px] text-gray-400 italic mt-0.5">Manage all registered system users</p>
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search..."
-            className="flex-1 sm:w-44 px-3 py-2 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-[#2D366D]/20" />
-          <button onClick={()=>setAddOpen(true)}
-            className="bg-[#2D366D] hover:opacity-90 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 whitespace-nowrap">
-            + Add
-          </button>
+          <h3 className="text-[22px] sm:text-2xl font-black uppercase tracking-[0.18em] text-[#071E3D]">
+            Registered Users
+          </h3>
+
+          <p className="text-base text-[#7B8AA6] italic mt-1">
+            Manage all registered system user accounts
+          </p>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-[11px] min-w-[640px]">
-          <thead className="bg-gray-50 text-gray-400 font-black uppercase border-b text-[9px] tracking-widest">
-            <tr>
-              <th className="p-4 text-[12px]">ID</th>
-              <th className="p-4 text-[12px]">Username</th>
-              <th className="p-4 text-[12px]">First Name</th>
-              <th className="p-4 text-[12px]">Last Name</th>
-              <th className="p-4 text-center text-[12px]">Role</th>
-              <th className="p-4 text-center text-[12px]">Status</th>
-              <th className="p-4 text-center text-[12px]">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filtered.map(user=>(
-              <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                <td className="p-4 text-gray-400 font-bold text-[12px]">U{user.id}</td>
-                <td className="p-6 font-bold text-slate-700 text-[12px]">
-                {toTitleCase(user.username)}
-              </td>
-              <td className="p-4 text-gray-500 text-[12px]">{toTitleCase(user.first_name)}</td>
-              <td className="p-4 text-gray-500 text-[12px]">{toTitleCase(user.last_name)}</td>
-                <td className="p-4 text-center">
-                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${roleColor(user.role)}`}>{user.role}</span>
-                </td>
-                <td className="p-4 text-center">
-                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${statusColor(user)}`}>
-                    {statusText(user)}
-                  </span>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
 
-                </td>
-                <td className="p-4 text-center">
-                  <div className="flex justify-center gap-2 text-[12px] font-black uppercase">
-                    <button
-                      onClick={() => handleView(user)}
-                      className="text-blue-500 hover:underline"
-                    >
-                      View
-                    </button>
+        <div className="relative w-full sm:w-[330px]">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0B6B8A] text-lg">
+            🔍
+          </span>
 
-                    <button onClick={() => handleEdit(user)} className="text-amber-500 hover:underline">
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => setArchiveUser(user)}
-                      className="text-red-400 hover:underline"
-                    >
-                      Archive
-                    </button>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search users..."
+            className="w-full pl-10 pr-4 py-3 border border-[#CBD8E8] rounded-full text-lg outline-none bg-white text-[#071E3D] placeholder:text-[#8A98B3] focus:ring-2 focus:ring-[#0B6B8A]/20 focus:border-[#0B6B8A] transition-all"
+          />
+        </div>
+
+        <button
+          onClick={() => setAddOpen(true)}
+          className="px-14 py-3 rounded-full bg-[#2D366D] text-white font-black uppercase tracking-[0.12em] text-m shadow-[0_6px_14px_rgba(45,54,109,0.25)] hover:bg-[#24305C] transition-all whitespace-nowrap"
+        >
+          📋 Add User
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+
+  {/* TABLE WRAPPER START */}
+  <div className="flex-1 overflow-y-auto bg-white">
+  <table className="w-full min-w-[1000px] table-fixed border-separate border-spacing-0">
+  <thead className="sticky top-0 z-10">
+    <tr>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">ID</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Username</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">First Name</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Last Name</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Role</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Status</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Actions</th>
+    </tr>
+  </thead>
+          
+          <tbody className="divide-y divide-slate-100 bg-white">
+            {filtered.length > 0 ? (
+              filtered.map(u => (
+                <tr key={u.id} className="hover:bg-blue-50/40 transition-colors h-[80px]">
+                  
+                  <td className="bg-white p-5 text-center align-middle">
+                    <span className="font-mono text-[11px] bg-slate-100 px-2.5 py-1 rounded border border-slate-200 text-slate-500 font-bold inline-block"> #U-{String(u.id).padStart(3, '0')}
+                    </span>
+                  </td>
+                  
+                  <td className="bg-white p-5 font-bold text-slate-700 text-center align-middle truncate px-4">{u.username}
+                  </td>
+                  
+                  <td className="bg-white p-5 text-slate-500 text-center align-middle px-4 truncate">
+                    {toTitleCase(u.first_name)}
+                  </td>
+                  
+                  <td className="bg-white p-5 text-slate-500 text-center align-middle px-4 truncate">
+                    {toTitleCase(u.last_name)}
+                  </td>
+                  
+                  <td className="bg-white p-5 text-center align-middle">
+                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${roleColor(u.role)}`}>
+                      {u.role}
+                    </span>
+                  </td>
+                  
+                  <td className="bg-white p-5 text-center align-middle">
+                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${statusColor(u)}`}>
+                      {statusText(u)}
+                    </span>
+                  </td>
+                  
+                  <td className="bg-white p-5 text-center align-middle">
+                    <div className="flex justify-center items-center gap-2">
+                      <button
+                        onClick={() => handleView(u)}
+                        className="bg-[#0B6B8A] text-white hover:bg-[#095A74] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
+                      >
+                        View
+                      </button>
+                      <button 
+                        onClick={() => handleEdit(u)} 
+                        className="bg-white border border-[#C79A2B] text-[#9A741C] hover:bg-[#FFF8E8] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setArchiveUser(u)}
+                        className="bg-white border border-red-300 text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+            
+                      >
+                        Archive
+                      </button>
+                    </div>
+                  </td>
+
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={7} className="bg-white text-center py-40">
+                  <div className="flex flex-col items-center justify-center text-slate-300 gap-2">
+                    <span className="text-6xl opacity-10 font-black tracking-tighter">
+                      EMPTY
+                    </span>
+                    <p className="text-sm font-sans tracking-[0.2em] uppercase font-bold text-slate-400">
+                      No active users discovered
+                    </p>
                   </div>
                 </td>
               </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan={7} className="p-10 text-center text-slate-300 italic text-xs">No users found.</td></tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {addOpen  && <UserModal onSave={handleAddUser} onClose={()=>setAddOpen(false)} />}
+      {/* Table Footer */}
+      <div className="bg-slate-50 p-5 border-t border-slate-100 shrink-0 text-center z-20">
+        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">
+          SLC Seek &amp; Balik Centralized Account Services
+        </p>
+      </div>
+
+      {/* Popups Layer */}
+      {addOpen && (
+        <UserModal 
+          onSave={handleAddUser} 
+          onClose={() => setAddOpen(false)} 
+        />
+      )}
+      
       {editUser && (
         <UserModal
           user={editUser}
@@ -430,12 +517,11 @@ function toTitleCase(text) {
 
       {archiveUser && (
         <ConfirmModal
-          message={`Archive "${archiveUser.username}"? This user will no longer be active.`}
+          message={`Archive user profile "${archiveUser.username}"? This operator account will instantly lose system access pathways.`}
           onConfirm={() => handleArchiveUser(archiveUser)}
           onClose={() => setArchiveUser(null)}
         />
       )}
-
 
     </div>
   );

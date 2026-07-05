@@ -1,8 +1,8 @@
 from django.urls import path
-from .views import create_claim, get_claim, update_claim
+from .views import get_claim, create_claim, schedule_meeting
 
 urlpatterns = [
-    path('items/', get_claim, name='get_claim'),
-    path('create/', create_claim, name='create_claim'),
-    path('claims/<int:pk>/', update_claim, name='update_claim'),
+    path('', get_claim),
+    path('create/', create_claim),
+    path('schedule/<int:pk>/', schedule_meeting),
 ]
