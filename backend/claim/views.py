@@ -1,11 +1,13 @@
 from django.core.mail import send_mail
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
 
 from .models import Claim
 from .serializers import ClaimSerializer
+
+User = get_user_model()
 
 
 @api_view(['GET'])
@@ -18,11 +20,52 @@ def get_claim(request):
 @api_view(['POST'])
 def create_claim(request):
     serializer = ClaimSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=201)
-    return Response(serializer.errors, status=400)
 
+    if serializer.is_valid():
+        claim = serializer.save()
+
+        staff_emails = list(
+            User.objects.filter(
+                role__in=["admin", "moderator"],
+                is_archived=False,
+                email__isnull=False,
+            )
+            .exclude(email="")
+            .values_list("email", flat=True)
+        )
+
+        if staff_emails:
+            try:
+                send_mail(
+                    "New Claim Request Submitted",
+                    f"""
+A new claim request has been submitted.
+
+Item ID: {claim.item.id}
+Item Name: {claim.item.title}
+Item Category: {claim.item.category}
+Item Location: {claim.item.location}
+
+Claimant Name: {claim.claimant_name}
+Contact Number: {claim.claimant_contact}
+Claimant Email: {claim.claimant_email}
+
+Preferred Meeting Date: {claim.meeting_date}
+Preferred Meeting Time: {claim.meeting_time}
+
+Proof / Details:
+{claim.proof_description}
+""",
+                    settings.DEFAULT_FROM_EMAIL,
+                    staff_emails,
+                    fail_silently=False,
+                )
+            except Exception as e:
+                print("Failed to send claim email:", e)
+
+        return Response(serializer.data, status=201)
+
+    return Response(serializer.errors, status=400)
 
 @api_view(['PUT'])
 def schedule_meeting(request, pk):

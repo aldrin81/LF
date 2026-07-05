@@ -510,7 +510,7 @@ const LostItems = ({ role }) => {
               </th>
 
               <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[16px] tracking-wide text-center">
-                Date Logged
+                Estimation Date
               </th>
 
               <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[16px] tracking-wide text-center">

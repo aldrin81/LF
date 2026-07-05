@@ -1,13 +1,13 @@
-from django.shortcuts import render
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.mail import send_mail
 import random
 
-# pyrefly: ignore [missing-import]
+from django.conf import settings
+from django.core.mail import send_mail
+
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 from .models import ItemDetails
-# pyrefly: ignore [missing-import]
 from .serializers import ItemSerializers
 
 
@@ -27,33 +27,18 @@ def create_item_details(request):
     if serializer.is_valid():
         item = serializer.save()
 
-        # -------------------------
-        # 1. GENERATE TICKET CODE
-        # -------------------------
-        ticket_code = f"TKT-{item.id}-{random.randint(1000, 9999)}"
-        item.ticket_code = ticket_code
-        item.save()
+        recipient_email = item.email or request.data.get("email")
 
-        # -------------------------
-        # 2. GET EMAIL (SAFE FALLBACK)
-        # -------------------------
-        recipient_email = (
-            request.data.get("email")
-            or getattr(item, "email", None)
-        )
-
-        # -------------------------
-        # 3. SEND EMAIL
-        # -------------------------
         if recipient_email:
-            send_mail(
-                subject=f"Lost Item Report Submitted - {ticket_code}",
-                message=f"""
+            try:
+                send_mail(
+                    subject=f"Lost Item Report Submitted - {item.ticket_code}",
+                    message=f"""
 Hello {item.poster_name},
 
 Your lost item report has been successfully submitted.
 
-Ticket Code: {ticket_code}
+Ticket Code: {item.ticket_code}
 
 Item: {item.title}
 Category: {item.category}
@@ -65,18 +50,17 @@ You can use this ticket code to track your report.
 
 - SAO Office
 """,
-                from_email="seekandbalik@gmail.com",
-                recipient_list=[recipient_email],
-                fail_silently=False,
-            )
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[recipient_email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                print("Failed to send lost item email:", e)
 
-        # -------------------------
-        # 4. RESPONSE
-        # -------------------------
         return Response({
             "message": "Item created successfully",
-            "ticket_code": ticket_code,
-            "data": serializer.data
+            "ticket_code": item.ticket_code,
+            "data": ItemSerializers(item, context={'request': request}).data
         }, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

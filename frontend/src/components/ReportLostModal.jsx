@@ -89,20 +89,33 @@ const ReportLostModal = ({ onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}>
 
-      <div className="bg-white w-full max-w-4xl rounded-md shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div
+          className={`bg-white w-full ${
+            submitted ? "max-w-lg" : "max-w-4xl"
+          } rounded-md shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}
+        >
 
         {submitted ? (
-          <div className="p-10 text-center flex flex-col items-center">
-            <div className="text-6xl mb-6 animate-bounce">✅</div>
-            <h3 className="font-black text-[#2D366D] text-2xl uppercase tracking-tighter italic">Report Filed</h3>
-            <p className="text-slate-500 text-sm font-sans mt-4 leading-relaxed max-w-sm">
-              Your report is now in our registry. Updates will be sent to <b>{form.email}</b>.
+          <div className="w-full px-12 py-12 text-center flex flex-col items-center justify-center">
+            <div className="text-6xl mb-8 animate-bounce">✅</div>
+
+            <h3 className="font-black text-[#2D366D] text-2xl uppercase tracking-tighter italic">
+              Report Filed
+            </h3>
+
+            <p className="text-slate-500 text-md font-sans mt-7 leading-relaxed max-w-md">
+              Your report is now in our registry. Updates will be sent to{" "}
+              <b>{form.email}</b>.
             </p>
-            <p className="text-slate-500 text-md font-sans mt-4 leading-relaxed max-w-sm">
-              Your ticket number is: <b>{ticketCode}</b>.
+
+            <p className="text-slate-500 text-md font-sans mt-5 leading-relaxed max-w-md">
+              Your ticket number is: <b>{ticketCode}</b>
             </p>
-            <button onClick={onClose}
-              className="mt-8 w-60 bg-[#2D366D] text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:scale-[1.02] transition-all">
+
+            <button
+              onClick={onClose}
+              className="mt-10 w-72 bg-[#2D366D] text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-sm hover:scale-[1.02] transition-all"
+            >
               Return to Board
             </button>
           </div>

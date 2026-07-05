@@ -397,10 +397,10 @@ const Users = () => {
   <table className="w-full min-w-[1000px] table-fixed border-separate border-spacing-0">
   <thead className="sticky top-0 z-10">
     <tr>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">ID</th>
+      <th className="bg-[#0B6B8A] p-2 text-white font-black uppercase text-[16px] text-center">ID</th>
       <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Username</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">First Name</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Last Name</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Name</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Email</th>
       <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Role</th>
       <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Status</th>
       <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Actions</th>
@@ -421,11 +421,11 @@ const Users = () => {
                   </td>
                   
                   <td className="bg-white p-5 text-slate-500 text-center align-middle px-4 truncate">
-                    {toTitleCase(u.first_name)}
+                    {toTitleCase(u.first_name)} {toTitleCase(u.last_name)}
                   </td>
                   
                   <td className="bg-white p-5 text-slate-500 text-center align-middle px-4 truncate">
-                    {toTitleCase(u.last_name)}
+                    {toTitleCase(u.email)}
                   </td>
                   
                   <td className="bg-white p-5 text-center align-middle">

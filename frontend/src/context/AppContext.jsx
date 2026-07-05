@@ -25,7 +25,7 @@ export const AppProvider = ({ children }) => {
   console.log("Submitting claim payload:", data);
 
     return await createClaim({
-      item: data.item_id,
+      item: data.item,
       claimant_name: data.claimant_name,
       claimant_contact: data.claimant_contact,
       claimant_email: data.claimant_email,

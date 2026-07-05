@@ -40,14 +40,16 @@ class ItemDetails(models.Model):
     title = models.CharField(max_length=30)
     description = models.TextField(max_length=100, default='')
     category = models.CharField(choices=CATEGORIES, default="All", max_length=30)
-    location = models.CharField(default="All", max_length=30)
+    location = models.CharField(default="All", max_length=254)
     created_date = models.DateField()
     created_time = models.TimeField()
     image = models.ImageField(upload_to='items_photos/', null=True, blank=True)
     status = models.CharField(choices=STATUS_OPTION, max_length=30, default="Pending")
     type = models.CharField(choices=ITEM_TYPE, max_length=30, default="Lost")
     poster_name = models.CharField(max_length=30, default='')
-    email = models.CharField(max_length=30, default='')
+    email = models.EmailField(max_length=254, default='')
+
+    time_stamp = models.DateTimeField(auto_now_add=True)
 
     # 🔥 TICKET SYSTEM
     ticket_code = models.CharField(max_length=20, unique=True, blank=True, null=True)
@@ -58,7 +60,7 @@ class ItemDetails(models.Model):
         super().save(*args, **kwargs)
 
         if is_new and not self.ticket_code:
-            self.ticket_code = f"SLC-{self.id}-{uuid.uuid4().hex[:4].upper()}"
+            self.ticket_code = f"TKT-{self.id}-{uuid.uuid4().hex[:4].upper()}"
             super().save(update_fields=["ticket_code"])
 
     def __str__(self):

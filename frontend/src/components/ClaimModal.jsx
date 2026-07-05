@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 const ClaimModal = ({ item, onClose }) => {
   const { submitClaimRequest } = useApp();
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     claimant_name: '',
@@ -27,25 +28,31 @@ const ClaimModal = ({ item, onClose }) => {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      await submitClaimRequest({
-        item_id: item.id,
-        claimant_name: form.claimant_name,
-        claimant_contact: `+63${form.claimant_contact}`,
-        claimant_email: form.claimant_email,
-        meeting_date: form.meeting_date,
-        meeting_time: form.meeting_time,
-        proof_description: form.proof_description
-      });
+  if (loading) return;
 
-      setSubmitted(true);
-    } catch (err) {
-      console.error("Claim error:", err?.response?.data || err.message);
-      alert("Failed to submit claim");
-    }
-  };
+  setLoading(true);
+
+  try {
+    await submitClaimRequest({
+      item: item.id,
+      claimant_name: form.claimant_name,
+      claimant_contact: `+63${form.claimant_contact}`,
+      claimant_email: form.claimant_email,
+      meeting_date: form.meeting_date,
+      meeting_time: form.meeting_time,
+      proof_description: form.proof_description
+    });
+
+    setSubmitted(true);
+  } catch (err) {
+    console.error("Claim error:", err?.response?.data || err.message);
+    alert(JSON.stringify(err?.response?.data || err.message));
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div
@@ -230,16 +237,18 @@ const ClaimModal = ({ item, onClose }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-3 rounded-xl bg-[#E3E8F0] text-[#64748B] text-sm sm:text-base font-bold uppercase tracking-wide transition duration-200 hover:bg-[#D5DDE8]"
+                disabled={loading}
+                className="flex-1 py-3 rounded-xl bg-[#E3E8F0] text-[#64748B] text-sm sm:text-base font-bold uppercase tracking-wide transition duration-200 hover:bg-[#D5DDE8] disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
 
               <button
                 type="submit"
-                className="flex-1 py-3 rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] text-white text-sm sm:text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
+                disabled={loading}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] text-white text-sm sm:text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
               >
-                Submit
+                {loading ? "Submitting..." : "Submit"}
               </button>
 
             </div>
