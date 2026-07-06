@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getCurrentUser } from "../api/api";
 import { Link, useLocation } from 'react-router-dom';
 import ProfileModal from "./ProfileModal";
 import {
@@ -19,15 +20,24 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
   const normalizedRole = role?.toLowerCase();
   const formattedRole = role?.charAt(0).toUpperCase() + role?.slice(1).toLowerCase();
 
-  const currentUser = {
-  id: null,
-  full_name: "",
-  username: "",
-  email: "",
-  contact: "",
-  role: role,
-  profile_picture: ""
-}
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+  async function fetchCurrentUser() {
+    try {
+      const data = await getCurrentUser();
+
+      setCurrentUser({
+        ...data,
+        full_name: `${data.first_name || ""} ${data.last_name || ""}`.trim(),
+      });
+    } catch (error) {
+      console.error("Failed to fetch current user:", error);
+    }
+  }
+
+  fetchCurrentUser();
+}, []);
 
   const menuItems = [
     {
@@ -98,9 +108,15 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
     Welcome back,
   </p>
 
-  <h2 className="mt-1 text-3xl font-extrabold text-[#0B6FA4] leading-tight">
+  <h2 className="mt-1 text-xl font-extrabold text-[#0B6FA4] leading-tight">
 
-    {currentUser.full_name || `${formattedRole} Marie`}
+    {currentUser?.first_name} {currentUser?.last_name}
+
+  </h2>
+
+  <h2 className="mt-1 text-lg font-extrabold text-[#0B6FA4] leading-tight">
+
+    {formattedRole || "User"}
 
   </h2>
 
@@ -190,36 +206,41 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
 
       {/* Logout Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="text-xl font-bold text-slate-800">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 backdrop-blur-md p-6">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-[0_30px_80px_rgba(0,0,0,.25)]">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#E8F4FA] text-[#0B648D]">
+              <LogOut size={30} />
+            </div>
+
+            <h3 className="mt-6 text-2xl font-bold text-[#154B70]">
               Confirm Logout
             </h3>
 
-            <p className="text-sm text-slate-500 mt-2">
-              Are you sure you want to logout?
+            <p className="mt-3 text-sm leading-relaxed text-slate-500">
+              You are about to end your current session. You will need to log in again to access the system.
             </p>
 
-            <div className="flex gap-3 mt-6">
+            <div className="mt-7 space-y-3">
               <button
-                onClick={() => setShowLogoutModal(false)}
-                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 transition"
-              >
-                Cancel
-              </button>
-
-              <button
+                type="button"
                 onClick={onLogout}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white transition"
+                className="w-full rounded-xl bg-[#0B648D] py-3 text-base font-bold uppercase text-white transition hover:bg-[#094f70] active:scale-[.98]"
               >
                 Logout
               </button>
-              
+
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(false)}
+                className="w-full rounded-xl border border-[#0B648D] py-3 font-semibold uppercase text-[#0B648D] transition hover:bg-blue-50"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
-        
       )}
+
       <ProfileModal
   isOpen={showProfileModal}
   onClose={() => setShowProfileModal(false)}

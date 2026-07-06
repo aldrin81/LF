@@ -6,7 +6,7 @@ import { Form } from 'react-router-dom';
 import PhotoUpload from '../components/PhotoUpload';
 
 
-const AREAS = ['Canteen','Gym','Highschool Grounds','Basement','Main Building','Sao Lobby','Parking Area'];
+const AREAS = ['Canteen','Gym','Highschool Grounds','Basement','Main Building','Sao Lobby','Parking Area', 'Others'];
 const CATS  = ['Personal','Accessories','Id','Electronics','Keys', 'Valuables'];
 const STATUSES = ['Pending','Claimed', 'Approved'];
 
@@ -29,15 +29,40 @@ const EMPTY = {
 
 
 const ItemModal = ({ item, onSave, onClose }) => {
-  const [form, setForm] = useState(item || EMPTY);
+  const normalizeForm = (source) => {
+    const base = source || EMPTY;
+    const location = base.location || "Canteen";
+
+    if (location && !AREAS.includes(location)) {
+      return {
+        ...base,
+        location: "Others",
+        other_location: location,
+      };
+    }
+
+    return {
+      ...base,
+      location,
+      other_location: base.other_location || "",
+    };
+  };
+
+  const [form, setForm] = useState(normalizeForm(item));
   const isEdit = !!item;
 
   useEffect(() => {
-    setForm(item || EMPTY);
+    setForm(normalizeForm(item));
   }, [item]);
 
   const set = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+      ...(key === "location" && value !== "Others"
+        ? { other_location: "" }
+        : {}),
+    }));
   };
 
   const handleSave = async (e) => {
@@ -46,20 +71,35 @@ const ItemModal = ({ item, onSave, onClose }) => {
     if (
       !form.title?.trim() ||
       !form.poster_name?.trim() ||
-      !form.created_date?.trim()
+      !form.created_date?.trim() ||
+      (form.location === "Others" && !form.other_location?.trim())
     ) {
       return;
     }
-    await onSave(form);
-    onClose();
+
+    const payload = {
+      ...form,
+      location:
+        form.location === "Others"
+          ? form.other_location.trim()
+          : form.location,
+    };
+
+    delete payload.other_location;
+
+    await onSave(payload);
   };
 
   const handlePhotoChange = (e) => {
     const { name, value, files } = e.target;
-
     set(name, files ? files[0] : value);
   };
 
+  const inputClass =
+    "h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1478a7] disabled:bg-slate-100";
+
+  const labelClass =
+    "mb-2 block text-sm font-bold uppercase text-slate-700";
 
   return (
     <div
@@ -68,106 +108,124 @@ const ItemModal = ({ item, onSave, onClose }) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-y-auto max-h-[90vh]">
-        <div className="flex justify-between items-center px-7 py-5 border-b">
-          <h3 className="font-black text-[#2D366D] uppercase text-xs tracking-widest italic">
-            {isEdit ? 'Edit Lost Item' : 'Add Lost Item'}
-          </h3>
+      <div className="w-full max-w-4xl max-h-[92vh] overflow-hidden rounded-md bg-white shadow-2xl">
+        <div className="flex items-start justify-between bg-[#1478a7] px-6 py-3 text-white">
+          <div>
+            <h3 className="text-2xl font-bold">
+              {isEdit ? "Edit Lost Item" : "Add Lost Item"}
+            </h3>
+            <p className="mt-1 text-sm text-white/90">
+              {isEdit ? "Update lost item details" : "Submit details for a lost item"}
+            </p>
+          </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center text-sm"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-xl text-white transition hover:bg-white/25"
+            aria-label="Close"
           >
-            ✕
+            ×
           </button>
         </div>
 
-        <form onSubmit={handleSave} className="p-7 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Item Name</label>
-              <input
-                className="inp"
-                value={form.title || ''}
-                onChange={(e) => set('title', e.target.value)}
-                placeholder="e.g. Black Wallet"
-                required
-              />
+        <form
+          onSubmit={handleSave}
+          className="max-h-[calc(92vh-88px)] overflow-y-auto px-6 py-5"
+        >
+          <div className="mx-auto max-w-3xl space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className={labelClass}>Item Name *</label>
+                <input
+                  className={inputClass}
+                  value={form.title || ""}
+                  onChange={(e) => set("title", e.target.value)}
+                  placeholder="e.g. Black Wallet"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Reported By *</label>
+                <input
+                  className={inputClass}
+                  value={form.poster_name || ""}
+                  onChange={(e) => set("poster_name", e.target.value)}
+                  placeholder="Full name"
+                  required
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="label">Reported By</label>
-              <input
-                className="inp"
-                value={form.poster_name || ''}
-                onChange={(e) => set('poster_name', e.target.value)}
-                placeholder="Full name"
-                required
-              />
-            </div>
-          </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className={labelClass}>Category</label>
+                <select
+                  className={inputClass}
+                  value={form.category || "Personal"}
+                  onChange={(e) => set("category", e.target.value)}
+                >
+                  {CATS.map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Category</label>
-              <select
-                className="inp"
-                value={form.category || 'Personal'}
-                onChange={(e) => set('category', e.target.value)}
-              >
-                {CATS.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
-            </div>
+              <div>
+                <label className={labelClass}>Area Lost</label>
+                <select
+                  className={inputClass}
+                  value={form.location || "Canteen"}
+                  onChange={(e) => set("location", e.target.value)}
+                >
+                  {AREAS.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                </select>
 
-            <div>
-              <label className="label">Area Lost</label>
-              <select
-                className="inp"
-                value={form.location || 'Canteen'}
-                onChange={(e) => set('location', e.target.value)}
-              >
-                {AREAS.map((a) => (
-                  <option key={a}>{a}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Date Reported</label>
-              <input
-                className="inp"
-                type="date"
-                value={form.created_date || ''}
-                onChange={(e) => set('created_date', e.target.value)}
-                required
-              />
+                <input
+                  className={`${inputClass} mt-2 disabled:cursor-not-allowed disabled:text-slate-400`}
+                  value={form.other_location || ""}
+                  onChange={(e) => set("other_location", e.target.value)}
+                  placeholder="Please specify location"
+                  disabled={form.location !== "Others"}
+                  required={form.location === "Others"}
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className={labelClass}>Date Reported *</label>
+                <input
+                  className={inputClass}
+                  type="date"
+                  value={form.created_date || ""}
+                  onChange={(e) => set("created_date", e.target.value)}
+                  required
+                />
+              </div>
 
-              {!isEdit && (
+              {!isEdit ? (
                 <div>
-                  <label className="label">Time Reported</label>
+                  <label className={labelClass}>Time Reported</label>
                   <input
-                    className="inp"
+                    className={inputClass}
                     type="time"
-                    value={form.created_time || ''}
-                    onChange={(e) => set('created_time', e.target.value)}
+                    value={form.created_time || ""}
+                    onChange={(e) => set("created_time", e.target.value)}
                   />
                 </div>
-              )}
-
-              {isEdit && (
+              ) : (
                 <div>
-                  <label className="label">Status</label>
+                  <label className={labelClass}>Status</label>
                   <select
-                    className="inp"
-                    value={form.status || 'Pending'}
-                    onChange={(e) => set('status', e.target.value)}
+                    className={inputClass}
+                    value={form.status || "Pending"}
+                    onChange={(e) => set("status", e.target.value)}
                   >
                     {STATUSES.map((s) => (
                       <option key={s}>{s}</option>
@@ -176,42 +234,42 @@ const ItemModal = ({ item, onSave, onClose }) => {
                 </div>
               )}
             </div>
-          </div>
 
-          <div>
-            <label className="label">Description</label>
-            <textarea
-              className="inp resize-none"
-              rows={3}
-              value={form.description || ''}
-              onChange={(e) => set('description', e.target.value)}
-              placeholder="Describe the item..."
-            />
-          </div>
+            <div>
+              <label className={labelClass}>Description</label>
+              <textarea
+                className="min-h-[96px] w-full resize-none rounded-xl border border-slate-300 px-4 py-3 text-base text-lg text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1478a7]"
+                rows={2}
+                value={form.description || ""}
+                onChange={(e) => set("description", e.target.value)}
+                placeholder="Describe the item..."
+              />
+            </div>
 
-          {!isEdit && (
-            <PhotoUpload
-              name="image"
-              value={form.image}
-              onChange={handlePhotoChange}
-            />
-          )}
+            {!isEdit && (
+              <PhotoUpload
+                name="image"
+                value={form.image}
+                onChange={handlePhotoChange}
+              />
+            )}
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="submit"
-              className="flex-1 bg-[#2D366D] text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all"
-            >
-              {isEdit ? 'Save Changes' : 'Add Item'}
-            </button>
+            <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+              <button
+                type="submit"
+                className="flex-1 py-3 rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
+              >
+                {isEdit ? "Save Changes" : "Add Item"}
+              </button>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all"
-            >
-              Cancel
-            </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </form>
       </div>

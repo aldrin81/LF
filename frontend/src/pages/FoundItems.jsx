@@ -4,7 +4,7 @@
   import ItemDetailModal from '../components/ItemDetailModal';
   import PhotoUpload from '../components/PhotoUpload';
 
-  const AREAS = ['Canteen','Gym','Highschool Grounds','Basement','Main Building','Sao Lobby','Parking Area'];
+  const AREAS = ['Canteen','Gym','Highschool Grounds','Basement','Main Building','Sao Lobby','Parking Area', 'Others'];
   const CATS  = ['Personal','Accessories','Id','Electronics','Keys', 'Valuables'];
   const STATUSES = ['Pending','Claimed', 'Approved'];
 
@@ -28,153 +28,223 @@
 
   // ─── Item Modal (Add / Edit) ─────────────────────────────────────────────────
   const ItemModal = ({ item, onSave, onClose }) => {
-    const [form, setForm] = useState(item || EMPTY);
-    const isEdit = !!item;
 
-    useEffect(() => {
-      setForm(item || EMPTY);
-    }, [item]);
+    const normalizeForm = (source) => {
+    const base = source || EMPTY;
+    const location = base.location || "Canteen";
 
-    const set = (key, value) => {
-      setForm((prev) => ({ ...prev, [key]: value }));
+  if (location && !AREAS.includes(location)) {
+    return {
+      ...base,
+      location: "Others",
+      other_location: location,
     };
+  }
 
-    const handleSave = async (e) => {
-      e.preventDefault();
+  return {
+    ...base,
+    location,
+    other_location: base.other_location || "",
+  };
+};
 
-      if (
-        !form.title?.trim() ||
-        !form.poster_name?.trim() ||
-        !form.created_date?.trim()
-      ) {
-        return;
-      }
-      await onSave(form);
-      onClose();
-    };
+  const [form, setForm] = useState(normalizeForm(item));
+  const isEdit = !!item;
 
-    const handlePhotoChange = (e) => {
-      const { name, value, files } = e.target;
-      set(name, files ? files[0] : value);
-    };
+useEffect(() => {
+  setForm(normalizeForm(item));
+}, [item]);
 
-    return (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
-        }}
+  const set = (key, value) => {
+  setForm((prev) => ({
+    ...prev,
+    [key]: value,
+    ...(key === "location" && value !== "Others"
+      ? { other_location: "" }
+      : {}),
+  }));
+};
+
+  const handleSave = async (e) => {
+  e.preventDefault();
+
+  if (
+    !form.title?.trim() ||
+    !form.poster_name?.trim() ||
+    !form.created_date?.trim() ||
+    (form.location === "Others" && !form.other_location?.trim())
+  ) {
+    return;
+  }
+
+  const payload = {
+    ...form,
+    location:
+      form.location === "Others"
+        ? form.other_location.trim()
+        : form.location,
+  };
+
+  delete payload.other_location;
+
+  await onSave(payload);
+};
+
+  const handlePhotoChange = (e) => {
+    const { name, value, files } = e.target;
+    set(name, files ? files[0] : value);
+  };
+
+  const inputClass =
+    "h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1478a7] disabled:bg-slate-100";
+
+  const labelClass =
+    "mb-2 block text-sm font-bold uppercase text-slate-700";
+
+  return (
+    <div
+  className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+  onClick={(e) => {
+    if (e.target === e.currentTarget) onClose();
+  }}
+>
+  <div className="w-full max-w-4xl max-h-[92vh] overflow-hidden rounded-md bg-white shadow-2xl">
+    <div className="flex items-start justify-between bg-[#1478a7] px-6 py-3 text-white">
+      <div>
+        <h3 className="text-2xl font-bold">
+          {isEdit ? "Edit Surrendered Item" : "Add Surrendered Item"}
+        </h3>
+        <p className="mt-1 text-sm text-white/90">
+          {isEdit
+            ? "Update surrendered item details"
+            : "Submit details for a surrendered item"}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-xl text-white transition hover:bg-white/25"
+        aria-label="Close"
       >
-        <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-y-auto max-h-[90vh]">
-          <div className="flex justify-between items-center px-7 py-5 border-b">
-            <h3 className="font-black text-[#2D366D] uppercase text-xs tracking-widest italic">
-              {isEdit ? 'Edit Found Item' : 'Add Found Item'}
-            </h3>
-            <button
-              onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center text-sm"
-            >
-            </button>
-          </div>
+        ×
+      </button>
+    </div>
 
-          <form onSubmit={handleSave} className="p-7 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <form
+      onSubmit={handleSave}
+      className="max-h-[calc(92vh-88px)] overflow-y-auto px-6 py-5"
+    >
+      <div className="mx-auto max-w-3xl space-y-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="label">Item Name</label>
+                <label className={labelClass}>Item Name *</label>
                 <input
-                  className="inp"
-                  value={form.title || ''}
-                  onChange={(e) => set('title', e.target.value)}
+                  className={inputClass}
+                  value={form.title || ""}
+                  onChange={(e) => set("title", e.target.value)}
                   placeholder="e.g. Black Wallet"
                   required
                 />
               </div>
+
               <div>
-                <label className="label">Reported By</label>
+                <label className={labelClass}>Reported By *</label>
                 <input
-                  className="inp"
-                  value={form.poster_name || ''}
-                  onChange={(e) => set('poster_name', e.target.value)}
+                  className={inputClass}
+                  value={form.poster_name || ""}
+                  onChange={(e) => set("poster_name", e.target.value)}
                   placeholder="Full name"
                   required
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="label">Category</label>
+                <label className={labelClass}>Category</label>
                 <select
-                  className="inp"
-                  value={form.category || 'Personal'}
-                  onChange={(e) => set('category', e.target.value)}
+                  className={inputClass}
+                  value={form.category || "Personal"}
+                  onChange={(e) => set("category", e.target.value)}
                 >
                   {CATS.map((c) => (
                     <option key={c}>{c}</option>
                   ))}
                 </select>
               </div>
+
               <div>
-                <label className="label">Area Found</label>
+                <label className={labelClass}>Area Found</label>
+
                 <select
-                  className="inp"
-                  value={form.location || 'Canteen'}
-                  onChange={(e) => set('location', e.target.value)}
+                  className={inputClass}
+                  value={form.location || "Canteen"}
+                  onChange={(e) => set("location", e.target.value)}
                 >
                   {AREAS.map((a) => (
-                    <option key={a}>{a}</option>
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
                   ))}
                 </select>
+
+                <input
+                  className={`${inputClass} mt-3 disabled:cursor-not-allowed disabled:text-slate-400`}
+                  value={form.other_location || ""}
+                  onChange={(e) => set("other_location", e.target.value)}
+                  placeholder="Please specify location"
+                  disabled={form.location !== "Others"}
+                  required={form.location === "Others"}
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="label">Date Reported</label>
+                <label className={labelClass}>Date Reported *</label>
                 <input
-                  className="inp"
+                  className={inputClass}
                   type="date"
-                  value={form.created_date || ''}
-                  onChange={(e) => set('created_date', e.target.value)}
+                  value={form.created_date || ""}
+                  onChange={(e) => set("created_date", e.target.value)}
                   required
                 />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {!isEdit && (
-                  <div>
-                    <label className="label">Time Reported</label>
-                    <input
-                      className="inp"
-                      type="time"
-                      value={form.created_time || ''}
-                      onChange={(e) => set('created_time', e.target.value)}
-                    />
-                  </div>
-                )}
-                {isEdit && (
-                  <div>
-                    <label className="label">Status</label>
-                    <select
-                      className="inp"
-                      value={form.status || 'Pending'}
-                      onChange={(e) => set('status', e.target.value)}
-                    >
-                      {STATUSES.map((s) => (
-                        <option key={s}>{s}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
+
+              {!isEdit ? (
+                <div>
+                  <label className={labelClass}>Time Reported</label>
+                  <input
+                    className={inputClass}
+                    type="time"
+                    value={form.created_time || ""}
+                    onChange={(e) => set("created_time", e.target.value)}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className={labelClass}>Status</label>
+                  <select
+                    className={inputClass}
+                    value={form.status || "Pending"}
+                    onChange={(e) => set("status", e.target.value)}
+                  >
+                    {STATUSES.map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div>
-              <label className="label">Description</label>
+              <label className={labelClass}>Description</label>
               <textarea
-                className="inp resize-none"
+                className="min-h-[96px] w-full resize-none rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1478a7]"
                 rows={3}
-                value={form.description || ''}
-                onChange={(e) => set('description', e.target.value)}
+                value={form.description || ""}
+                onChange={(e) => set("description", e.target.value)}
                 placeholder="Describe the item..."
               />
             </div>
@@ -187,26 +257,28 @@
               />
             )}
 
-            <div className="flex gap-3 pt-2">
+            <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
               <button
                 type="submit"
-                className="flex-1 bg-[#2D366D] text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all"
+                className="flex-1 py-3 rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
               >
-                {isEdit ? 'Save Changes' : 'Add Item'}
+                {isEdit ? "Save Changes" : "Add Item"}
               </button>
+
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all"
+                className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
               >
                 Cancel
               </button>
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   // ─── Confirm Delete Modal ───────────────────────────────────────────────────
   const ConfirmModal = ({ message, onConfirm, onClose }) => (
@@ -307,7 +379,7 @@
         formData.append('created_time', updatedItem.created_time || '');
         formData.append('description', updatedItem.description || '');
         formData.append('status', updatedItem.status || '');
-        formData.append('type', 'Found');
+        formData.append('type', 'Surrendered');
 
         await editLostItem(editItem.id, formData);
 
@@ -324,14 +396,14 @@
       try {
         const formData = new FormData();
 
-        formData.append('title', form.title);
-        formData.append('category', form.category);
-        formData.append('poster_name', form.poster_name);
-        formData.append('location', form.location);
-        formData.append('created_date', form.created_date);
+        formData.append('title', form.title || '');
+        formData.append('category', form.category || 'Personal');
+        formData.append('poster_name', form.poster_name || '');
+        formData.append('location', form.location || '');
+        formData.append('created_date', form.created_date || '');
         formData.append('created_time', form.created_time || '');
         formData.append('description', form.description || '');
-        formData.append('type', 'Found');
+        formData.append('type', 'Surrendered');
 
         if (form.image) {
           formData.append('image', form.image);
@@ -343,8 +415,8 @@
         await fetchItems();
         setAddOpen(false);
       } catch (error) {
-        console.error('Error adding item:', error);
-        window.alert('Failed to add item. Please try again.');
+        console.error('Error adding item:', error.response?.data || error);
+        window.alert(JSON.stringify(error.response?.data || 'Failed to add item. Please try again.'));
       }
     }
 
@@ -452,7 +524,7 @@
                     Category
                   </th>
                   <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                    Found By
+                    Surrerendered By
                   </th>
                   <th className="bg-[#0B6B8A] p-4 w-[20%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Area

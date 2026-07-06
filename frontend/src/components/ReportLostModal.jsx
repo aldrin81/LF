@@ -17,8 +17,6 @@ const ReportLostModal = ({ onClose }) => {
   created_date: "", created_time: "", description: "", image: null,
 });
 
-  const finalLocation = form.location === "Others" ? form.other_location.trim() : form.location;
-
   const maxDate = new Date().toLocaleDateString('en-CA');
 
   const handleChange = (e) => {
@@ -124,24 +122,24 @@ const ReportLostModal = ({ onClose }) => {
             {/* Header */}
             <div className="bg-[#0B6FA4] text-white px-5 py-4 flex justify-between items-start">
 
-  <div>
-    <h2 className="text-3xl font-bold">
-      Report Lost Item
-    </h2>
+          <div>
+            <h2 className="text-3xl font-bold">
+              Report Lost Item
+            </h2>
 
-    <p className="text-blue-100 text-lg mt-1">
-      Submit details of your lost item
-    </p>
-  </div>
+            <p className="text-blue-100 text-lg mt-1">
+              Submit details of your lost item
+            </p>
+          </div>
 
-  <button
-    onClick={onClose}
-    className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 transition flex items-center justify-center"
-  >
-    ✕
-  </button>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 transition flex items-center justify-center"
+          >
+            ✕
+          </button>
 
-</div>
+        </div>
 
             {/* Form Container */}
             <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">

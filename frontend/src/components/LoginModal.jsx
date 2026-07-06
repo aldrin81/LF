@@ -187,16 +187,16 @@ const LoginModal = ({ onClose }) => {
             <button
               type="submit"
               disabled={loading}
-              className="mt-3 w-full rounded-xl bg-[#0B648D] py-3 text-lg font-semibold text-white transition hover:bg-[#094f70] active:scale-[.98]"
+              className="mt-3 w-full rounded-xl bg-[#0B648D] py-3 text-lg font-semibold text-white transition hover:bg-[#094f70] active:scale-[.98] disabled:bg-slate-400 disabled:cursor-not-allowed disabled:hover:bg-slate-400"
             >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-3">
-                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                    Logging in...
-                  </span>
-                ) : (
-                  "LOGIN"
-                )} 
+              {loading ? (
+                <span className="flex items-center justify-center gap-3">
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  Logging in...
+                </span>
+              ) : (
+                "LOGIN"
+              )}
             </button>
 
             <button

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { X } from "lucide-react";
 import { useApp } from '../context/AppContext';
 import { getUsers, getUserById, updateUserById, createUser } from '../api/api';
 
@@ -64,12 +65,10 @@ const UserModal = ({ user, onSave, onClose, mode = 'edit' }) => {
           </div>
 
           <button
-            type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-xl text-white transition hover:bg-white/25"
-            aria-label="Close"
+            className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 transition flex items-center justify-center"
           >
-            ×
+            ✕
           </button>
         </div>
 
