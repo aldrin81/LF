@@ -4,6 +4,7 @@ import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import slcLogo from "../assets/slc-logo.png";
 import saoLogo from "../assets/sao.png";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 
 const LoginModal = ({ onClose }) => {
@@ -11,55 +12,76 @@ const LoginModal = ({ onClose }) => {
   const navigate = useNavigate();
 
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [pendingUser, setPendingUser] = useState(null);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+      e.preventDefault();
 
-    const username = e.target.username.value.trim();
-    const password = e.target.password.value.trim();
+      const username = e.target.username.value.trim();
+      const password = e.target.password.value.trim();
 
-    setLoading(true);
-    setError("");
+      setLoading(true);
+      setError("");
+      setSuccess("");
 
-    try {
-      // login request
-      await loginUser(username, password);
+      try {
+        // login request
+        await loginUser(username, password);
 
-      // fake loading (optional UI delay)
-      await new Promise((r) => setTimeout(r, 2000));
+        // fake loading optional UI delay
+        await new Promise((r) => setTimeout(r, 2000));
 
-      // get user info
-      const currentUser = await getCurrentUser();
+        // get user info
+        const currentUser = await getCurrentUser();
 
-      // update context + localStorage
-      setLogin(currentUser.role);
+        // If password is auto-generated, force user to change it first
+        if (currentUser.must_change_password) {
+          setPendingUser(currentUser);
+          setMustChangePassword(true);
+          return;
+        }
 
-      // 🔥 IMPORTANT FIX (this prevents BACK to PublicLanding)
-      if (currentUser.role === "admin") {
+        // update context + localStorage
+        setLogin(currentUser.role);
+
         navigate("/dashboard", { replace: true });
-      } else if (currentUser.role === "moderator") {
-        navigate("/dashboard", { replace: true });
-      } else {
-        navigate("/dashboard", { replace: true });
+        onClose();
+      } catch (err) {
+        console.error(err);
+        setError("Invalid credentials. Please try again.");
+      } finally {
+        setLoading(false);
       }
-
-      onClose();
-    } catch (err) {
-      console.error(err);
-      setError("Invalid credentials. Please try again.");
-    } finally {
-      setLoading(false);
-    }
   };
-
   return (
   <div
     className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-md p-6"
-    onClick={(e) => {
-      if (e.target === e.currentTarget && !loading) onClose();
-    }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !loading && !mustChangePassword) onClose();
+      }}
   >
+
+    {mustChangePassword && (
+      <ChangePasswordModal
+        mustChangePassword={pendingUser?.must_change_password}
+        onSuccess={() => {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+
+          setMustChangePassword(false);
+          setPendingUser(null);
+          setSuccess("Password changed successfully. Please log in using your new password.");
+        }}
+        onCancel={() => {
+          setMustChangePassword(false);
+          setPendingUser(null);
+        }}
+      />
+    )}
+
     <div className="w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-[0_30px_80px_rgba(0,0,0,.25)]">
 
       <div className="grid md:grid-cols-2">
@@ -69,16 +91,16 @@ const LoginModal = ({ onClose }) => {
 
           <div className="flex justify-center gap-4 mb-8">
             <img
-  src={slcLogo}
-  alt="SLC Logo"
-  className="w-16 h-16 object-contain bg-white rounded-full p-1"
-/>
+              src={slcLogo}
+              alt="SLC Logo"
+              className="w-16 h-16 object-contain bg-white rounded-full p-1"
+            />
 
-<img
-  src={saoLogo}
-  alt="Seek & Balik Logo"
-  className="w-16 h-16 object-contain bg-white rounded-full p-1"
-/>
+            <img
+              src={saoLogo}
+              alt="Seek & Balik Logo"
+              className="w-16 h-16 object-contain bg-white rounded-full p-1"
+            />
           </div>
 
           <h1 className="text-5xl font-serif leading-tight">
@@ -126,9 +148,15 @@ const LoginModal = ({ onClose }) => {
               </div>
             )}
 
+            {success && (
+              <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                {success}
+              </div>
+            )}
+
             <div>
               <label className="text-sm font-semibold text-[#154B70]">
-                Username
+                Email
               </label>
 
               <input
@@ -136,7 +164,7 @@ const LoginModal = ({ onClose }) => {
                 type="text"
                 required
                 disabled={loading}
-                placeholder="Enter your username"
+                placeholder="Enter your email"
                 className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-[#0B648D] focus:ring-4 focus:ring-[#0B648D]/20 outline-none transition"
               />
             </div>
@@ -161,7 +189,14 @@ const LoginModal = ({ onClose }) => {
               disabled={loading}
               className="mt-3 w-full rounded-xl bg-[#0B648D] py-3 text-lg font-semibold text-white transition hover:bg-[#094f70] active:scale-[.98]"
             >
-                LOGIN 
+                {loading ? (
+                  <span className="flex items-center justify-center gap-3">
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    Logging in...
+                  </span>
+                ) : (
+                  "LOGIN"
+                )} 
             </button>
 
             <button

@@ -214,19 +214,19 @@ const ReportLostModal = ({ onClose }) => {
 
               <div className="flex gap-4 pt-4">
 
-  <button
-    type="button"
-    onClick={onClose}
-    className="flex-1 py-3 rounded-xl bg-[#E3E8F0] text-[#64748B] text-base font-bold uppercase tracking-wide transition duration-200 hover:bg-[#D5DDE8]"
-  >
-    Cancel
-  </button>
                 <button
-    type="submit"
-    className="flex-1 py-3 rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
-  >
-    Submit 
-  </button>
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 py-3 rounded-xl bg-[#E3E8F0] text-[#64748B] text-base font-bold uppercase tracking-wide transition duration-200 hover:bg-[#D5DDE8]"
+                >
+                  Cancel
+                </button>
+                              <button
+                  type="submit"
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
+                >
+                  Submit 
+                </button>
               </div>
             </form>
           </>

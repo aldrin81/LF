@@ -13,6 +13,7 @@ class Account(AbstractUser):
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     is_archived = models.BooleanField(default=False)
+    must_change_password = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 

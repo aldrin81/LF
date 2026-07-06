@@ -124,7 +124,6 @@ export async function getUserById(id) {
 
 export async function updateUserById(id, data) {
   const token = localStorage.getItem("accessToken");
-
   const response = await api.put(`account/users/${id}/`, data, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -142,6 +141,25 @@ export async function createUser(data) {
       Authorization: `Bearer ${token}`,
     },
   });
+
+  return response.data;
+}
+
+export async function changePassword(current_password, new_password) {
+  const token = localStorage.getItem("accessToken");
+
+  const response = await api.post(
+    "account/change-password/",
+    {
+      current_password,
+      new_password,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
   return response.data;
 }

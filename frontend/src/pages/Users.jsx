@@ -23,8 +23,6 @@ const statusText = (user) => {
 };
 
 const EMPTY = { 
-  id: '', 
-  username: '', 
   first_name: '', 
   last_name: '', 
   email: '', 
@@ -40,24 +38,38 @@ const UserModal = ({ user, onSave, onClose, mode = 'edit' }) => {
   const [form, setForm] = useState(user || EMPTY);
   const isEdit = !!user && mode !== 'view';
   const isView = mode === 'view';
-  
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-y-auto max-h-[90vh]">
-        <div className="flex justify-between items-center px-7 py-5 border-b">
-          <h3 className="font-black text-[#2D366D] uppercase text-xs tracking-widest italic">
-            {isView ? 'View User' : isEdit ? 'Edit User' : 'Add User'}
-          </h3>
-          <button 
-            onClick={onClose} 
-            className="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center text-sm"
+      <div className="w-full max-w-xl rounded-md bg-white shadow-2xl overflow-hidden">
+        <div className="flex items-start justify-between bg-[#1478a7] px-6 py-4 text-white">
+          <div>
+            <h3 className="text-2xl font-bold">
+              {isView ? 'View User' : isEdit ? 'Edit User' : 'Add User'}
+            </h3>
+            <p className="mt-1 text-sm text-white/90">
+              {isView
+                ? 'Review user account details'
+                : isEdit
+                  ? 'Update user account details'
+                  : 'Submit details for a new user'}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-xl text-white transition hover:bg-white/25"
+            aria-label="Close"
           >
-            ✕
+            ×
           </button>
         </div>
 
@@ -66,126 +78,117 @@ const UserModal = ({ user, onSave, onClose, mode = 'edit' }) => {
             e.preventDefault();
             if (!isView) await onSave(form);
           }}
-          className="p-7 space-y-4"
+          className="px-5 py-4 sm:px-8 sm:py-6 space-y-4"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">First Name</label>
-              <input
-                className="inp"
-                value={form.first_name || ''}
-                onChange={(e) => set('first_name', e.target.value)}
-                placeholder="First name"
-                disabled={isView}
-              />
-            </div>
+    <div className="mx-auto max-w-2xl space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div>
+        <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
+          First Name *
+        </label>
+        <input
+          className="h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1478a7] disabled:bg-slate-100"
+          value={form.first_name || ''}
+          onChange={(e) => set('first_name', e.target.value)}
+          placeholder="First name"
+          disabled={isView}
+        />
+      </div>
 
-            <div>
-              <label className="label">Last Name</label>
-              <input
-                className="inp"
-                value={form.last_name || ''}
-                onChange={(e) => set('last_name', e.target.value)}
-                placeholder="Last name"
-                disabled={isView}
-              />
-            </div>
-          </div>
+      <div>
+        <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
+          Last Name *
+        </label>
+        <input
+          className="h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1478a7] disabled:bg-slate-100"
+          value={form.last_name || ''}
+          onChange={(e) => set('last_name', e.target.value)}
+          placeholder="Last name"
+          disabled={isView}
+        />
+      </div>
+    </div>
 
-          <div>
-            <label className="label">Email Address</label>
-            <input
-              className="inp"
-              type="email"
-              value={form.email || ''}
-              onChange={(e) => set('email', e.target.value)}
-              placeholder="email@example.com"
-              disabled={isView}
-            />
-          </div>
+    <div>
+      <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
+        Email Address *
+      </label>
+      <input
+        className="h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1478a7] disabled:bg-slate-100"
+        type="email"
+        value={form.email || ''}
+        onChange={(e) => set('email', e.target.value)}
+        placeholder="email@slc-sflu.edu.ph"
+        disabled={isView}
+      />
+    </div>
 
-          <div>
-            <label className="label">Username</label>
-            <input
-              className="inp"
-              value={form.username || ''}
-              onChange={(e) => set('username', e.target.value)}
-              placeholder="Username"
-              required
-              disabled={isView}
-            />
-          </div>
+    {!isEdit && !isView && (
+      <div>
+        <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
+          Password
+        </label>
+        <input
+          className="h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none placeholder:text-slate-400 disabled:bg-slate-100 disabled:text-slate-400"
+          type="password"
+          value=""
+          placeholder="Password will be auto-generated"
+          disabled
+          readOnly
+        />
+      </div>
+    )}
 
-          {!isEdit && !isView && (
-            <div>
-              <label className="label">Password</label>
-              <input
-                className="inp"
-                type="password"
-                value={form.password || ''}
-                onChange={(e) => set('password', e.target.value)}
-                placeholder="Password"
-                required
-                disabled={isView}
-              />
-            </div>
-          )}
+    <div>
+      <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
+        Role *
+      </label>
+      <select
+        className="h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none focus:border-[#1478a7] disabled:bg-slate-100"
+        value={form.role || 'moderator'}
+        onChange={(e) => set('role', e.target.value)}
+        disabled={isView}
+      >
+        <option value="admin">Admin</option>
+        <option value="moderator">Moderator</option>
+      </select>
+    </div>
 
-          <div>
-            <label className="label">Role</label>
-            <select
-              className="inp"
-              value={form.role || 'moderator'}
-              onChange={(e) => set('role', e.target.value)}
-              disabled={isView}
-            >
-              <option value="admin">Admin</option>
-              <option value="moderator">Moderator</option>
-            </select>
-          </div>
+    {isEdit && (
+      <div>
+        <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
+          Status *
+        </label>
+        <select
+          className="h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none focus:border-[#1478a7] disabled:bg-slate-100"
+          value={form.is_active ? 'Active' : 'Inactive'}
+          onChange={(e) => set('is_active', e.target.value === 'Active')}
+          disabled={isView}
+        >
+          <option>Active</option>
+          <option>Inactive</option>
+        </select>
+      </div>
+    )}
 
-          {isEdit && (
-            <div>
-              <label className="label">Status</label>
-              <select
-                className="inp"
-                value={form.is_active ? 'Active' : 'Inactive'}
-                onChange={(e) => set('is_active', e.target.value === 'Active')}
-                disabled={isView}
-              >
-                <option>Active</option>
-                <option>Inactive</option>
-              </select>
-            </div>
-          )}
-
-          <div className="flex gap-3 pt-2">
-            {isView ? (
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all"
-              >
-                Close
-              </button>
-            ) : (
-              <>
+            <div className="grid grid-cols-1 gap-4 pt-1 sm:grid-cols-2">
+              {!isView && (
                 <button
                   type="submit"
-                  className="flex-1 bg-[#2D366D] text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all"
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
                 >
                   {isEdit ? 'Save Changes' : 'Add User'}
                 </button>
+              )}
 
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-1 bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all"
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-3 rounded-xl bg-[#E3E8F0] text-[#64748B] text-base font-bold uppercase tracking-wide transition duration-200 hover:bg-[#D5DDE8]"
                 >
-                  Cancel
-                </button>
-              </>
-            )}
+                {isView ? 'Close' : 'Cancel'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -249,7 +252,6 @@ const Users = () => {
   async function handleSaveEdit(updatedUser) {
     try {
       await updateUserById(editUser.id, {
-        username: updatedUser.username,
         first_name: updatedUser.first_name,
         last_name: updatedUser.last_name,
         email: updatedUser.email,
@@ -268,12 +270,10 @@ const Users = () => {
   async function handleAddUser(newUser) {
     try {
       await createUser({
-        username: newUser.username,
         first_name: newUser.first_name,
         last_name: newUser.last_name,
         email: newUser.email,
         role: newUser.role || 'moderator',
-        password: newUser.password,
         is_active: true,
       });
 
@@ -284,7 +284,6 @@ const Users = () => {
       window.alert('User added successfully!');
     } catch (error) {
       console.error('Error adding user:', error.response?.data || error);
-      alert(JSON.stringify(error.response?.data || 'Failed to add user.'));
     }
   }
 
@@ -301,7 +300,6 @@ const Users = () => {
   async function handleArchiveUser(user) {
     try {
       await updateUserById(user.id, {
-        username: user.username,
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
@@ -321,13 +319,12 @@ const Users = () => {
 
   const filtered = user.filter((u) => {
     const searchText = search.toLowerCase();
-    const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username;
+    const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email;
 
     return (
       u.is_archived === false && (
         fullName.toLowerCase().includes(searchText) ||
         String(u.id).includes(searchText) ||
-        u.username?.toLowerCase().includes(searchText) ||
         u.email?.toLowerCase().includes(searchText) ||
         u.role?.toLowerCase().includes(searchText)
       )
@@ -397,13 +394,12 @@ const Users = () => {
   <table className="w-full min-w-[1000px] table-fixed border-separate border-spacing-0">
   <thead className="sticky top-0 z-10">
     <tr>
-      <th className="bg-[#0B6B8A] p-2 text-white font-black uppercase text-[16px] text-center">ID</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Username</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Name</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Email</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Role</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Status</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[16px] text-center">Actions</th>
+      <th className="bg-[#0B6B8A] p-2 text-white font-black uppercase text-[15px] text-center">ID</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[15px] text-center">Name</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[15px] text-center">Email</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[15px] text-center">Role</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[15px] text-center">Status</th>
+      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[15px] text-center">Actions</th>
     </tr>
   </thead>
           
@@ -415,9 +411,6 @@ const Users = () => {
                   <td className="bg-white p-5 text-center align-middle">
                     <span className="font-mono text-[11px] bg-slate-100 px-2.5 py-1 rounded border border-slate-200 text-slate-500 font-bold inline-block"> #U-{String(u.id).padStart(3, '0')}
                     </span>
-                  </td>
-                  
-                  <td className="bg-white p-5 font-bold text-slate-700 text-center align-middle truncate px-4">{u.username}
                   </td>
                   
                   <td className="bg-white p-5 text-slate-500 text-center align-middle px-4 truncate">
@@ -517,7 +510,7 @@ const Users = () => {
 
       {archiveUser && (
         <ConfirmModal
-          message={`Archive user profile "${archiveUser.username}"? This operator account will instantly lose system access pathways.`}
+          message={`Archive user profile "${archiveUser.email}"? This operator account will instantly lose system access pathways.`}
           onConfirm={() => handleArchiveUser(archiveUser)}
           onClose={() => setArchiveUser(null)}
         />

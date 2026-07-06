@@ -442,28 +442,28 @@
             <table className="w-full min-w-[1000px] table-fixed border-separate border-spacing-0">
               <thead className="sticky top-0 z-10">
                 <tr>
-                  <th className="bg-[#0B6B8A] p-4 w-[12%] border-b border-[#095A74] text-white font-black uppercase text-[16px] tracking-wide text-center">
+                  <th className="bg-[#0B6B8A] p-4 w-[12%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Item Id
                   </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[16px] tracking-wide text-center">
+                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Item Name
                   </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[16px] tracking-wide text-center">
+                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Category
                   </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[16px] tracking-wide text-center">
+                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Found By
                   </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[20%] border-b border-[#095A74] text-white font-black uppercase text-[16px] tracking-wide text-center">
+                  <th className="bg-[#0B6B8A] p-4 w-[20%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Area
                   </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[16px] tracking-wide text-center">
+                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Estimation Date
                   </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[16px] tracking-wide text-center">
+                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Status
                   </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[18%] border-b border-[#095A74] text-white font-black uppercase text-[16px] tracking-wide text-center">
+                  <th className="bg-[#0B6B8A] p-4 w-[18%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Action
                   </th>
                 </tr>
