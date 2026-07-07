@@ -29,6 +29,8 @@ const EMPTY = {
 
 
 const ItemModal = ({ item, onSave, onClose }) => {
+  const [saving, setSaving] = useState(false);
+
   const normalizeForm = (source) => {
     const base = source || EMPTY;
     const location = base.location || "Canteen";
@@ -68,6 +70,15 @@ const ItemModal = ({ item, onSave, onClose }) => {
   const handleSave = async (e) => {
     e.preventDefault();
 
+    if (saving) return;
+
+    const today = new Date().toLocaleDateString("en-CA");
+
+    if (form.created_date && form.created_date > today) {
+      window.alert("Date reported cannot be in the future.");
+      return;
+    }
+
     if (
       !form.title?.trim() ||
       !form.poster_name?.trim() ||
@@ -77,17 +88,23 @@ const ItemModal = ({ item, onSave, onClose }) => {
       return;
     }
 
-    const payload = {
-      ...form,
-      location:
-        form.location === "Others"
-          ? form.other_location.trim()
-          : form.location,
-    };
+    setSaving(true);
 
-    delete payload.other_location;
+    try {
+      const payload = {
+        ...form,
+        location:
+          form.location === "Others"
+            ? form.other_location.trim()
+            : form.location,
+      };
 
-    await onSave(payload);
+      delete payload.other_location;
+
+      await onSave(payload);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handlePhotoChange = (e) => {
@@ -100,6 +117,8 @@ const ItemModal = ({ item, onSave, onClose }) => {
 
   const labelClass =
     "mb-2 block text-sm font-bold uppercase text-slate-700";
+
+        const today = new Date().toLocaleDateString("en-CA");
 
   return (
     <div
@@ -205,6 +224,7 @@ const ItemModal = ({ item, onSave, onClose }) => {
                   type="date"
                   value={form.created_date || ""}
                   onChange={(e) => set("created_date", e.target.value)}
+                  max={today}
                   required
                 />
               </div>
@@ -257,9 +277,14 @@ const ItemModal = ({ item, onSave, onClose }) => {
             <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
               <button
                 type="submit"
-                className="flex-1 py-3 rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
+                disabled={saving}
+                className={`flex-1 py-3 rounded-xl text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 ${
+                  saving
+                    ? "bg-slate-400 cursor-not-allowed opacity-70"
+                    : "bg-gradient-to-b from-[#384388] to-[#2D366D] hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
+                }`}
               >
-                {isEdit ? "Save Changes" : "Add Item"}
+                {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Item"}
               </button>
 
               <button

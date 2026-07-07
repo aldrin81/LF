@@ -239,7 +239,7 @@ useEffect(() => {
                               className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
                                 } hover:bg-blue-50 transition`}
                             >
-                              <td className="border border-gray-300 px-4 py-4">
+                              <td className="border border-gray-300 px-4 py-4 text-center font-semibold">
                                 {toTitleCase(item.title)}
                               </td>
 
@@ -248,7 +248,7 @@ useEffect(() => {
                               </td>
 
                               <td className="border border-gray-300 px-4 py-4 text-center">
-                                📍 {toTitleCase(item.location)}
+                                {toTitleCase(item.location)}
                               </td>
 
                               <td className="border border-gray-300 px-4 py-4 text-center">
@@ -325,7 +325,7 @@ useEffect(() => {
                       <div className="flex justify-between gap-3">
                         <span className="font-semibold text-slate-400">Location</span>
                         <span className="text-right">
-                          📍 {toTitleCase(item.location)}
+                          {toTitleCase(item.location)}
                         </span>
                       </div>
 

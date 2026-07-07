@@ -163,3 +163,15 @@ export async function changePassword(current_password, new_password) {
 
   return response.data;
 }
+
+//LEADERBOARD API
+export const getLeaderboard = async () => {
+  const res = await api.get("gamification/leaderboard/");
+  return res.data;
+};
+
+//POINTS TRACKING API
+export const getPointsTracking = async () => {
+  const res = await api.get("gamification/points-tracking/");
+  return res.data;
+};

@@ -17,17 +17,19 @@
   const EMPTY = { 
     title: '', 
     category: 'Personal', 
-    poster_name: '', 
+    poster_name: '',
+    student_id: '',
     location: 'Canteen', 
     created_date: '', 
     created_time: '', 
     description: '', 
-    status: 'Pending', 
+    status: 'Approved', 
     image: null 
   };
 
   // ─── Item Modal (Add / Edit) ─────────────────────────────────────────────────
   const ItemModal = ({ item, onSave, onClose }) => {
+    const [saving, setSaving] = useState(false);
 
     const normalizeForm = (source) => {
     const base = source || EMPTY;
@@ -66,29 +68,45 @@ useEffect(() => {
 };
 
   const handleSave = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (
-    !form.title?.trim() ||
-    !form.poster_name?.trim() ||
-    !form.created_date?.trim() ||
-    (form.location === "Others" && !form.other_location?.trim())
-  ) {
-    return;
-  }
+    if (saving) return;
 
-  const payload = {
-    ...form,
-    location:
-      form.location === "Others"
-        ? form.other_location.trim()
-        : form.location,
+    const today = new Date().toLocaleDateString("en-CA");
+
+    if (form.created_date && form.created_date > today) {
+      window.alert("Date reported cannot be in the future.");
+      return;
+    }
+
+    if (
+      !form.title?.trim() ||
+      !form.poster_name?.trim() ||
+      !form.student_id?.trim() ||
+      !form.created_date?.trim() ||
+      (form.location === "Others" && !form.other_location?.trim())
+    ) {
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const payload = {
+        ...form,
+        location:
+          form.location === "Others"
+            ? form.other_location.trim()
+            : form.location,
+      };
+
+      delete payload.other_location;
+
+      await onSave(payload);
+    } finally {
+      setSaving(false);
+    }
   };
-
-  delete payload.other_location;
-
-  await onSave(payload);
-};
 
   const handlePhotoChange = (e) => {
     const { name, value, files } = e.target;
@@ -100,6 +118,8 @@ useEffect(() => {
 
   const labelClass =
     "mb-2 block text-sm font-bold uppercase text-slate-700";
+
+        const today = new Date().toLocaleDateString("en-CA");
 
   return (
     <div
@@ -158,22 +178,22 @@ useEffect(() => {
                   required
                 />
               </div>
+
+                <div>
+                <label className={labelClass}>Student ID *</label>
+                <input
+                  className={inputClass}
+                  value={form.student_id || ""}
+                  onChange={(e) => set("student_id", e.target.value)}
+                  placeholder="Student ID number"
+                  required
+                />
+              </div>
+              
             </div>
+            
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className={labelClass}>Category</label>
-                <select
-                  className={inputClass}
-                  value={form.category || "Personal"}
-                  onChange={(e) => set("category", e.target.value)}
-                >
-                  {CATS.map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-
               <div>
                 <label className={labelClass}>Area Found</label>
 
@@ -190,13 +210,26 @@ useEffect(() => {
                 </select>
 
                 <input
-                  className={`${inputClass} mt-3 disabled:cursor-not-allowed disabled:text-slate-400`}
+                  className={`${inputClass} w-full mt-3 disabled:cursor-not-allowed disabled:text-slate-400`}
                   value={form.other_location || ""}
                   onChange={(e) => set("other_location", e.target.value)}
                   placeholder="Please specify location"
                   disabled={form.location !== "Others"}
                   required={form.location === "Others"}
                 />
+              </div>
+              
+              <div>
+                <label className={labelClass}>Category</label>
+                <select
+                  className={inputClass}
+                  value={form.category || "Personal"}
+                  onChange={(e) => set("category", e.target.value)}
+                >
+                  {CATS.map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -208,6 +241,7 @@ useEffect(() => {
                   type="date"
                   value={form.created_date || ""}
                   onChange={(e) => set("created_date", e.target.value)}
+                  max={today}
                   required
                 />
               </div>
@@ -260,9 +294,14 @@ useEffect(() => {
             <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
               <button
                 type="submit"
-                className="flex-1 py-3 rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
+                disabled={saving}
+                className={`flex-1 py-3 rounded-xl text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 ${
+                  saving
+                    ? "bg-slate-400 cursor-not-allowed opacity-70"
+                    : "bg-gradient-to-b from-[#384388] to-[#2D366D] hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
+                }`}
               >
-                {isEdit ? "Save Changes" : "Add Item"}
+                {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Item"}
               </button>
 
               <button
@@ -373,6 +412,7 @@ useEffect(() => {
 
         formData.append('title', updatedItem.title || '');
         formData.append('poster_name', updatedItem.poster_name || '');
+        formData.append('student_id', updatedItem.student_id || '');
         formData.append('category', updatedItem.category || '');
         formData.append('location', updatedItem.location || '');
         formData.append('created_date', updatedItem.created_date || '');
@@ -399,10 +439,12 @@ useEffect(() => {
         formData.append('title', form.title || '');
         formData.append('category', form.category || 'Personal');
         formData.append('poster_name', form.poster_name || '');
+        formData.append('student_id', form.student_id || '');
         formData.append('location', form.location || '');
         formData.append('created_date', form.created_date || '');
         formData.append('created_time', form.created_time || '');
         formData.append('description', form.description || '');
+        formData.append('status', 'Approved');
         formData.append('type', 'Surrendered');
 
         if (form.image) {
