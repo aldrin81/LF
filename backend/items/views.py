@@ -1,5 +1,7 @@
 import random
 
+from gamification.services import award_points, get_item_points, CLAIMED_BONUS_POINTS
+
 from django.conf import settings
 from django.core.mail import send_mail
 
@@ -26,6 +28,22 @@ def create_item_details(request):
 
     if serializer.is_valid():
         item = serializer.save()
+
+        if (
+            item.type == "Surrendered"
+            and item.status == "Approved"
+            and not item.surrender_points_awarded
+        ):
+            award_points(
+                student_id=item.student_id,
+                full_name=item.poster_name,
+                points=get_item_points(item),
+                reason="SURRENDER_ITEM",
+                item_id=item.id,
+            )
+
+            item.surrender_points_awarded = True
+            item.save(update_fields=["surrender_points_awarded"])
 
         recipient_email = item.email or request.data.get("email")
 
@@ -82,10 +100,30 @@ def item_details(request, pk):
         serializer = ItemSerializers(item, data=request.data, partial=True, context={'request': request})
 
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            updated_item = serializer.save()
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if (
+                updated_item.type == "Surrendered"
+                and updated_item.status in ["Claimed", "Returned"]
+                and not updated_item.claimed_bonus_awarded
+            ):
+                award_points(
+                    student_id=updated_item.student_id,
+                    full_name=updated_item.poster_name,
+                    points=CLAIMED_BONUS_POINTS,
+                    reason="ITEM_CLAIMED",
+                    item_id=updated_item.id,
+                )
+
+                updated_item.claimed_bonus_awarded = True
+                updated_item.save(update_fields=["claimed_bonus_awarded"])
+
+            return Response(
+                ItemSerializers(updated_item, context={'request': request}).data,
+                status=status.HTTP_200_OK
+            )
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # DELETE ITEM

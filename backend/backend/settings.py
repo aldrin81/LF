@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'items',
     'claim',
     'notification',
+    'gamification',
 ]
 
 AUTH_USER_MODEL = 'account.Account'

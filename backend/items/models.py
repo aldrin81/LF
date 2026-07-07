@@ -47,9 +47,16 @@ class ItemDetails(models.Model):
     status = models.CharField(choices=STATUS_OPTION, max_length=30, default="Pending")
     type = models.CharField(choices=ITEM_TYPE, max_length=30, default="Lost")
     poster_name = models.CharField(max_length=30, default='')
+
+    student_id = models.CharField(max_length=30, null=True, blank=True)
+
     email = models.EmailField(max_length=254, default='')
 
     time_stamp = models.DateTimeField(auto_now_add=True)
+
+    #GAMIFICATION
+    surrender_points_awarded = models.BooleanField(default=False)
+    claimed_bonus_awarded = models.BooleanField(default=False)
 
     # 🔥 TICKET SYSTEM
     ticket_code = models.CharField(max_length=20, unique=True, blank=True, null=True)

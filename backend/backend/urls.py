@@ -25,6 +25,7 @@ urlpatterns = [
     path("item/", include("items.urls")),
     path("claim/", include("claim.urls")),
     path("notification/", include("notification.urls")),
+    path("gamification/", include("gamification.urls")),
 ]
 
 if settings.DEBUG:
