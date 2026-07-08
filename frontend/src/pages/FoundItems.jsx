@@ -1,4 +1,4 @@
-  import React, { useEffect, useState } from 'react';
+  import React, { useEffect, useState, useRef } from 'react';
   import { useApp } from '../context/AppContext';
   import { getItems, createLostItem, editLostItem, getItemById } from '../api/api';
   import ItemDetailModal from '../components/ItemDetailModal';
@@ -335,7 +335,7 @@ useEffect(() => {
   );
 
   // ─── Main FoundItems Module ───────────────────────────────────────────────────
-  const FoundItems = ({ role }) => {
+  const FoundItems = ({ currentFilter, role }) => {
     const { foundItems, addFoundItem, updateFoundItem, deleteFoundItem } = useApp();
     const [search, setSearch] = useState('');
     const [addOpen, setAddOpen] = useState(false);
@@ -343,6 +343,9 @@ useEffect(() => {
     const [viewItem, setViewItem] = useState(null);
     const [delItem, setDelItem] = useState(null);
     const [foundItem, setFoundItem] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const tableContainerRef = useRef(null);
 
     useEffect(() => {
       fetchItems();
@@ -352,6 +355,19 @@ useEffect(() => {
 
       return () => clearInterval(interval);
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+      }, [currentFilter]);
+    
+      const goToPage = (page) => {
+        setCurrentPage(page);
+    
+        tableContainerRef.current?.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+      };
 
     async function fetchItems() {
       try {
@@ -507,6 +523,36 @@ useEffect(() => {
       );
     }).sort((a, b) => b.id - a.id);
 
+  const ITEMS_PER_PAGE = 10;
+
+  const totalPages = Math.ceil(filteredFound.length / ITEMS_PER_PAGE);
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = filteredFound.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const getVisiblePages = () => {
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    let startPage = currentPage < maxVisiblePages ? 1 : currentPage - 3;
+    let endPage = startPage + maxVisiblePages - 1;
+
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = totalPages - maxVisiblePages + 1;
+    }
+
+    return Array.from(
+      { length: endPage - startPage + 1 },
+      (_, index) => startPage + index
+    );
+  };
+
+const visiblePages = getVisiblePages();
+
     return (
   <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(109vh-260px)]">
     <div className="bg-white rounded-[18px] border border-[#D8E2EF] shadow-[0_8px_24px_rgba(45,54,109,0.08)] overflow-hidden flex flex-col h-[calc(100vh-130px)]">
@@ -552,7 +598,7 @@ useEffect(() => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto bg-white">
+      <div ref={tableContainerRef} className="flex-1 overflow-y-auto bg-white">
             <table className="w-full min-w-[1000px] table-fixed border-separate border-spacing-0">
               <thead className="sticky top-0 z-10">
                 <tr>
@@ -584,8 +630,8 @@ useEffect(() => {
               </thead>
 
               <tbody className="bg-white">
-                {filteredFound.length > 0 ? (
-                  filteredFound.map((item, index) => (
+                {paginatedItems.length > 0 ? (
+                  paginatedItems.map((item, index) => (
                     <tr
                       key={item.id}
                       className={`h-[76px] transition-colors ${
@@ -593,7 +639,7 @@ useEffect(() => {
                       } hover:bg-[#EAF4FF]`}
                     >
                       <td className="p-4 font-bold text-[#071E3D] text-center align-middle truncate border-b border-[#D8E2EF]">
-                        F{index + 1}
+                        F{startIndex + index + 1}
                       </td>
 
                       <td className="p-4 font-bold text-[#071E3D] text-center align-middle truncate border-b border-[#D8E2EF]">
@@ -671,6 +717,50 @@ useEffect(() => {
               </tbody>
             </table>
           </div>
+          {filteredFound.length > 0 && (
+            <div className="flex flex-col gap-4 border-t border-[#D8E2EF] bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-bold text-[#7B8AA6]">
+                Showing {startIndex + 1}-
+                {Math.min(startIndex + ITEMS_PER_PAGE, filteredFound.length)} of{" "}
+                {filteredFound.length}
+              </p>
+
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => goToPage(Math.max(currentPage - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="h-10 rounded-lg border border-[#D8E2EF] px-4 text-xs font-black uppercase tracking-wide text-[#0B6B8A] transition hover:bg-[#EAF4FF] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Prev
+                </button>
+
+                {visiblePages.map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => goToPage(page)}
+                    className={`h-10 min-w-10 rounded-lg px-3 text-sm font-black transition ${
+                      currentPage === page
+                        ? "bg-[#0B6B8A] text-white shadow-md"
+                        : "border border-[#D8E2EF] bg-white text-[#0B6B8A] hover:bg-[#EAF4FF]"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => goToPage(Math.min(currentPage + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="h-10 rounded-lg border border-[#D8E2EF] px-4 text-xs font-black uppercase tracking-wide text-[#0B6B8A] transition hover:bg-[#EAF4FF] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
 
       {/* Interfaces Integration */}
       {addOpen && (

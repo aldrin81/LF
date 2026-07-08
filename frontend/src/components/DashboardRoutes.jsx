@@ -25,7 +25,7 @@ const DashboardRoutes = () => {
         path="moderator-lost"
         element={
           <RequireRole allowedRoles={["moderator"]}>
-            <LostItems />
+            <ModeratorLostItems />
           </RequireRole>
         }
       />

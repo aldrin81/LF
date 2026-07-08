@@ -1,48 +1,105 @@
-import React, { useState, useEffect } from 'react';
-import { Eye, X, CheckCircle, Clock, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Eye, X, CheckCircle, Trash2, AlertCircle } from 'lucide-react';
 import { getItems, API_URL, editLostItem } from '../api/api';
+
+const statusColor = (status) =>
+  status === 'Claimed' ? 'bg-purple-100 text-purple-500' :
+  status === 'Pending' ? 'bg-orange-100 text-orange-500' :
+  'bg-green-100 text-green-500';
+
+function toTitleCase(text) {
+  if (!text) return "";
+
+  return text
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
 const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Added only the absolute necessary states to control the new modals safely
-  const [activeConfirmation, setActiveConfirmation] = useState(null); 
+  const [activeConfirmation, setActiveConfirmation] = useState(null);
   const [notificationMessage, setNotificationMessage] = useState(null);
+  const lastItemsSnapshotRef = useRef('');
+  const isFetchingRef = useRef(false);
+  const tableContainerRef = useRef(null);
 
   useEffect(() => {
-    fetchData();
+    fetchData({ showLoading: true });
+
+    const interval = setInterval(() => {
+      fetchData({ showLoading: false });
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchData = async () => {
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [currentFilter]);
+
+  const goToPage = (page) => {
+    setCurrentPage(page);
+
+    tableContainerRef.current?.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  const fetchData = async ({ showLoading = false } = {}) => {
+    if (isFetchingRef.current) return;
+
     try {
-      setLoading(true);
+      isFetchingRef.current = true;
+      if (showLoading) setLoading(true);
       const data = await getItems();
       const actualData = Array.isArray(data) ? data : (data.results || []);
       const pendingLostItems = actualData.filter((item) => {
         return item.status === 'Pending' && item.type === 'Lost';
       });
 
-      setItems(pendingLostItems);
+      const nextSnapshot = JSON.stringify(
+        pendingLostItems.map((item) => ({
+          id: item.id,
+          title: item.title,
+          category: item.category,
+          poster_name: item.poster_name,
+          location: item.location,
+          created_date: item.created_date,
+          created_time: item.created_time,
+          status: item.status,
+          description: item.description,
+          image: item.image,
+          images: item.images,
+          file: item.file,
+        }))
+      );
 
+      if (nextSnapshot !== lastItemsSnapshotRef.current) {
+        lastItemsSnapshotRef.current = nextSnapshot;
+        setItems(pendingLostItems);
+      }
     } catch (error) {
       console.error("Error fetching items:", error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
+      isFetchingRef.current = false;
     }
   };
 
-  // Main status function body remains functionally unmodified
   const handleUpdateStatus = async (item, status = 'Approved') => {
     try {
-      // Since the backend now supports partial=True, we only send what changed
       await editLostItem(item.id, { status: status });
-      
+
       setNotificationMessage("Item approved.");
       setSelectedItem(null);
-      await fetchData(); 
-
+      await fetchData({ showLoading: false });
     } catch (error) {
       console.error(`Error updating status to ${status}:`, error.response?.data || error.message);
       const msg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
@@ -50,14 +107,12 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
     }
   };
 
-  // Main delete function body remains functionally unmodified
   const handleDelete = async (id) => {
     try {
-      // Assuming updateLostItem can be used for declining by setting status to 'Archived' or similar
-      await editLostItem(id, { status: 'Archived' }); 
+      await editLostItem(id, { status: 'Archived' });
       setNotificationMessage("Item declined.");
       setSelectedItem(null);
-      fetchData();
+      fetchData({ showLoading: false });
     } catch (error) {
       console.error("Error deleting item:", error);
     }
@@ -72,251 +127,402 @@ const ModeratorLostItems = ({ currentFilter = 'All Items' }) => {
     return path.startsWith('http') ? path : `${API_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
   };
 
-  const filteredItems = items.filter(item => {
+  const filteredItems = [...items].filter(item => {
     if (currentFilter === 'All Items') return true;
     return item.status === currentFilter;
-  });
+  }).sort((a, b) => b.id - a.id);
 
   if (loading) return <div className="p-20 text-center font-black text-slate-400 uppercase italic tracking-widest">Loading...</div>;
 
+
+  const ITEMS_PER_PAGE = 10;
+
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const getVisiblePages = () => {
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    let startPage = currentPage < maxVisiblePages ? 1 : currentPage - 3;
+    let endPage = startPage + maxVisiblePages - 1;
+
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = totalPages - maxVisiblePages + 1;
+    }
+
+    return Array.from(
+      { length: endPage - startPage + 1 },
+      (_, index) => startPage + index
+    );
+  };
+
+const visiblePages = getVisiblePages();
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredItems.map((item) => {
-          const imageUrl = getImageUrl(item.image || item.images || item.file);
+      <div className="overflow-hidden rounded-[18px] border border-[#D8E2EF] bg-white shadow-[0_8px_24px_rgba(45,54,109,0.08)]">
+        <div ref={tableContainerRef} className="max-h-[calc(100vh-260px)] overflow-auto bg-white">
+          <table className="w-full min-w-[1000px] table-fixed border-separate border-spacing-0">
+            <thead className="sticky top-0 z-10">
+              <tr>
+                <th className="w-[10%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Item Id
+                </th>
+                <th className="w-[18%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Item Name
+                </th>
+                <th className="w-[15%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Category
+                </th>
+                <th className="w-[16%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Reported By
+                </th>
+                <th className="w-[17%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Area
+                </th>
+                <th className="w-[16%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Estimation Date
+                </th>
+                <th className="w-[13%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Status
+                </th>
+                <th className="w-[18%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Action
+                </th>
+              </tr>
+            </thead>
+
+            <tbody className="bg-white">
+              {paginatedItems.length > 0 ? (
+                paginatedItems.map((item, index) => (
+                  <tr
+                    key={item.id}
+                    className={`h-[70px] transition-colors ${
+                      index % 2 === 0 ? "bg-white" : "bg-[#F6FAFF]"
+                    } hover:bg-[#EAF4FF]`}
+                  >
+                    <td className="border-b border-[#D8E2EF] p-2 text-center align-middle font-bold text-[#071E3D]">
+                      L{startIndex + index + 1}
+                    </td>
+
+                    <td className="truncate border-b border-[#D8E2EF] p-4 text-center align-middle font-bold text-[#071E3D]">
+                      {toTitleCase(item.title)}
+                    </td>
+
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle text-[#071E3D]">
+                      <span className="inline-flex items-center justify-center rounded-full bg-[#EEF4FA] px-3 py-1 text-[13px] font-bold uppercase tracking-wide text-[#2D366D]">
+                        {toTitleCase(item.category) || '-'}
+                      </span>
+                    </td>
+
+                    <td className="truncate border-b border-[#D8E2EF] p-4 text-center align-middle text-[#52627A]">
+                      {toTitleCase(item.poster_name) || '-'}
+                    </td>
+
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle text-[#071E3D]">
+                      <div className="flex items-center justify-center gap-1.5 truncate">
+                        <span>{toTitleCase(item.location) || '-'}</span>
+                      </div>
+                    </td>
+
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
+                      <span className="block text-[15px] font-bold text-[#071E3D]">
+                        {item.created_date || '-'}
+                      </span>
+                      <span className="block text-[15px] font-black uppercase tracking-wide text-[#7B8AA6]">
+                        {item.created_time || '-'}
+                      </span>
+                    </td>
+
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
+                      <span
+                        className={`rounded-full px-3 py-1 text-[13px] font-black uppercase tracking-wider ${statusColor(item.status)}`}
+                      >
+                        {item.status}
+                      </span>
+                    </td>
+
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => setSelectedItem(item)}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0B6B8A] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-[#095A74]"
+                        >
+                          <Eye size={14} strokeWidth={3} />
+                          Review
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8} className="bg-white py-24 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <span className="text-4xl font-black tracking-tighter text-[#071E3D] opacity-20">
+                        EMPTY
+                      </span>
+                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#7B8AA6]">
+                        No items found for "{currentFilter}"
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
           
-          return (
-            <div
-              key={item.id}
-              className="group bg-white rounded-3xl p-4 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300"
-            >
-              {/* Image Container */}
-              <div className="relative mb-4 overflow-hidden rounded-2xl h-52 sm:h-64 bg-slate-50">
-                <img
-                  src={imageUrl || "https://via.placeholder.com/400x300?text=No+Image"}
-                  alt="Item Picture"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <span
-                  className={`absolute top-3 right-3 text-white text-[11px] font-black uppercase px-3 py-1 rounded-full flex items-center gap-1 shadow-md ${
-                    item.status === 'Approved' ? 'bg-[#2c3e75]' : 'bg-amber-500'
-                  }`}
-                >
-                  {item.status === 'Approved' && <CheckCircle size={12} />}
-                  {item.status}
-                </span>
+        </div>
+        {filteredItems.length > 0 && (
+            <div className="flex flex-col gap-4 border-t border-[#D8E2EF] bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-bold text-[#7B8AA6]">
+                Showing {startIndex + 1}-
+                {Math.min(startIndex + ITEMS_PER_PAGE, filteredItems.length)} of{" "}
+                {filteredItems.length}
+              </p>
 
-                <span className="absolute bottom-3 left-3 bg-[#2c3e75]/80 backdrop-blur-md text-white text-[11px] font-bold uppercase px-2.5 py-1 rounded-lg flex items-center gap-1">
-                  <Clock size={12} />
-                  {item.created_time || '—'}
-                </span>
-              </div>
-
-              <h4 className="font-black text-[#2c3e75] uppercase text-md tracking-tight mb-3 truncate">{item.title}</h4>
-
-              <div className="grid grid-cols-2 gap-y-3 gap-x-2 mb-4">
-                {[
-                  { label: 'Category', val: item.category },
-                  { label: 'Area', val: item.location },
-                  { label: 'Date', val: item.created_date },
-                ].map((info, idx) => (
-                  <div key={idx}>
-                    <p className="text-[11px] text-slate-400 font-black uppercase tracking-widest">{info.label}</p>
-                    <p className="text-[13px] font-bold text-slate-600 truncate">{info.val || '—'}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Fixed equal size distribution button row */}
-              <div className="flex gap-2 w-full">
+              <div className="flex items-center justify-center gap-2">
                 <button
-                  onClick={() => setSelectedItem(item)}
-                  className="flex-1 bg-[#2c3e75] hover:bg-[#1e2b54] text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md shadow-slate-100"
+                  type="button"
+                  onClick={() => goToPage(Math.max(currentPage - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="h-10 rounded-lg border border-[#D8E2EF] px-4 text-xs font-black uppercase tracking-wide text-[#0B6B8A] transition hover:bg-[#EAF4FF] disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <Eye size={14} strokeWidth={3} />
-                  {item.status === 'Pending' ? 'Review' : 'Details'}
+                  Prev
                 </button>
 
-                <button 
-                  onClick={() => setActiveConfirmation({
-                    text: "Are you sure you want to decline this item listing?",
-                    action: () => handleDelete(item.id)
-                  })}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black uppercase text-[10px] tracking-widest transition-all rounded-xl py-3"
+                {visiblePages.map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => goToPage(page)}
+                    className={`h-10 min-w-10 rounded-lg px-3 text-sm font-black transition ${
+                      currentPage === page
+                        ? "bg-[#0B6B8A] text-white shadow-md"
+                        : "border border-[#D8E2EF] bg-white text-[#0B6B8A] hover:bg-[#EAF4FF]"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => goToPage(Math.min(currentPage + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="h-10 rounded-lg border border-[#D8E2EF] px-4 text-xs font-black uppercase tracking-wide text-[#0B6B8A] transition hover:bg-[#EAF4FF] disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Decline
+                  Next
                 </button>
               </div>
             </div>
-          );
-        })}
+          )}
       </div>
 
-      {/* Empty State */}
-      {filteredItems.length === 0 && (
-        <div className="py-20 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-          <p className="text-slate-400 font-bold italic text-sm">
-            No items found for "{currentFilter}".
-          </p>
-        </div>
-      )}
-
-      {/* Modal */}
       {selectedItem && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div 
-            className="absolute inset-0 bg-[#2c3e75]/40 backdrop-blur-xs"
-            onClick={() => setSelectedItem(null)}
-          />
-          
-          <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden relative border border-slate-100 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center px-8 py-6 border-b border-slate-100 bg-slate-50/50">
-              <h3 className="font-black text-[#2c3e75] uppercase text-xs tracking-widest italic">
-                Moderator Review
-              </h3>
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedItem(null);
+          }}
+        >
+          <div className="w-full max-w-4xl max-h-[92vh] overflow-hidden rounded-md bg-white shadow-2xl">
+            <div className="flex items-start justify-between bg-[#1478a7] px-6 py-3 text-white">
+              <div>
+                <h3 className="text-2xl font-bold">Moderator Review</h3>
+                <p className="mt-1 text-sm text-white/90">
+                  Review lost item details before approval
+                </p>
+              </div>
+
               <button
                 onClick={() => setSelectedItem(null)}
-                className="text-slate-400 hover:text-[#2c3e75] bg-white shadow-xs p-2 rounded-full transition-all border border-slate-200/60"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                aria-label="Close"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="p-8 space-y-6 overflow-y-auto max-h-[75vh]">
-              <img
-                src={getImageUrl(selectedItem.image || selectedItem.file) || "https://via.placeholder.com/400x300?text=No+Image"}
-                className="w-full h-64 object-cover rounded-[2rem] border border-slate-100 shadow-inner bg-slate-50"
-                alt="Item Preview"
-              />
+            <div className="max-h-[calc(92vh-88px)] overflow-y-auto px-6 py-5">
+              <div className="mx-auto max-w-3xl space-y-4">
+                <img
+                  src={getImageUrl(selectedItem.image || selectedItem.images || selectedItem.file) || "https://via.placeholder.com/900x500?text=No+Image"}
+                  className="h-72 w-full rounded-xl border border-slate-200 bg-slate-100 object-cover"
+                  alt="Item Preview"
+                />
 
-              <div>
-                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Item Name</p>
-                <h4 className="font-black text-[#2c3e75] text-2xl uppercase tracking-tighter italic">
-                  {selectedItem.title}
-                </h4>
-              </div>
-
-              {/* Banner color blocks matching theme */}
-              <div className="grid grid-cols-2 gap-4 bg-[#2c3e75]/5 p-6 rounded-[2rem] border border-[#2c3e75]/10">
-                {[
-                  ['Student ID', selectedItem.id],
-                  ['Contact', selectedItem.poster_contact],
-                  ['Area Found', selectedItem.location],
-                  ['Category', selectedItem.category],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">{label}</p>
-                    <p className="text-xs font-bold text-[#2c3e75] mt-0.5">{value || '—'}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div>
-                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Description</p>
-                <p className="text-xs text-slate-600 leading-relaxed font-medium bg-slate-50 p-5 rounded-2xl italic border border-slate-200/60">
-                  "{selectedItem.description || 'No description provided.'}"
-                </p>
-              </div>
-
-              {/* Approval Info Banner */}
-              {selectedItem.status === 'Approved' && (
-                <div className="bg-[#2c3e75]/10 border border-[#2c3e75]/20 p-4 rounded-2xl flex items-center gap-4">
-                  <div className="bg-[#2c3e75] p-2 rounded-xl text-white shadow-md">
-                    <CheckCircle size={18} />
-                  </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <p className="text-[11px] font-black text-[#2c3e75] uppercase">Item Publicly Visible</p>
-                    <p className="text-[10px] text-[#2c3e75]/80 font-bold uppercase">
-                      This item has been approved and is now visible to users.
-                    </p>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Item Name</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg font-bold text-slate-700">
+                      {toTitleCase(selectedItem.title) || '-'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Reported By</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {toTitleCase(selectedItem.poster_name) || '-'}
+                    </div>
                   </div>
                 </div>
-              )}
 
-              {/* Inner Modal Button sizing fixed to match */}
-              <div className="flex gap-3 pt-2 w-full">
-                {selectedItem.status === 'Pending' ? (
-                  <>
-                    <button 
-                      onClick={() => setActiveConfirmation({
-                        text: "Are you sure you want to approve this item?",
-                        action: () => handleUpdateStatus(selectedItem, 'Approved')
-                      })}
-                      className="flex-1 bg-[#2c3e75] text-white py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-[#1e2b54] transition-all shadow-lg shadow-slate-100"
-                    >
-                      Approve Item
-                    </button>
-                    <button 
-                      onClick={() => setActiveConfirmation({
-                        text: "Are you sure you want to decline this item?",
-                        action: () => handleDelete(selectedItem.id)
-                      })}
-                      className="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-slate-200 transition-all"
-                    >
-                      Decline
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    {selectedItem.status === 'Approved' && (
-                       <button 
-                        onClick={() => setActiveConfirmation({
-                          text: "Are you sure you want to change this item's status to Claimed?",
-                          action: () => handleUpdateStatus(selectedItem, 'Claimed')
-                        })}
-                        className="flex-1 bg-[#2c3e75] text-white py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-[#1e2b54] transition-all"
-                      >
-                        Mark Claimed
-                      </button>
-                    )}
-                    <button 
-                      onClick={() => setSelectedItem(null)}
-                      className="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-slate-200 transition-all"
-                    >
-                      Close
-                    </button>
-                  </>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Category</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {toTitleCase(selectedItem.category) || '-'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Area Lost</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {toTitleCase(selectedItem.location) || '-'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Date Reported</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {selectedItem.created_date || '-'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Status</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      <span className={`rounded-full px-3 py-1 text-[13px] font-black uppercase tracking-wider ${statusColor(selectedItem.status)}`}>
+                        {selectedItem.status || '-'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Description</p>
+                  <div className="min-h-[96px] rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                    {selectedItem.description || 'No description provided.'}
+                  </div>
+                </div>
+
+                {selectedItem.status === 'Approved' && (
+                  <div className="flex items-center gap-4 rounded-xl border border-green-200 bg-green-50 p-4">
+                    <div className="rounded-xl bg-green-500 p-2 text-white shadow-md">
+                      <CheckCircle size={18} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black uppercase text-green-700">Item Publicly Visible</p>
+                      <p className="text-xs font-bold uppercase text-green-600">
+                        This item has been approved and is now visible to users.
+                      </p>
+                    </div>
+                  </div>
                 )}
+
+                <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+                  {selectedItem.status === 'Pending' ? (
+                    <>
+                      <button
+                        onClick={() => setActiveConfirmation({
+                          text: "Are you sure you want to approve this item?",
+                          action: () => handleUpdateStatus(selectedItem, 'Approved')
+                        })}
+                        className="rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] py-3 text-base font-semibold uppercase tracking-wide text-white shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
+                      >
+                        Approve Item
+                      </button>
+                      <button
+                        onClick={() => setActiveConfirmation({
+                          text: "Are you sure you want to decline this item?",
+                          action: () => handleDelete(selectedItem.id)
+                        })}
+                        className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
+                      >
+                        Decline
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {selectedItem.status === 'Approved' && (
+                        <button
+                          onClick={() => setActiveConfirmation({
+                            text: "Are you sure you want to change this item's status to Claimed?",
+                            action: () => handleUpdateStatus(selectedItem, 'Claimed')
+                          })}
+                          className="rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] py-3 text-base font-semibold uppercase tracking-wide text-white shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D]"
+                        >
+                          Mark Claimed
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setSelectedItem(null)}
+                        className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
+                      >
+                        Close
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* NEW SYSTEM: Confirmation Overlay matching your exact branding */}
       {activeConfirmation && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#2c3e75]/40 backdrop-blur-xs">
-          <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-slate-100 text-center">
-            <h5 className="font-black text-[#2c3e75] uppercase text-xs tracking-widest mb-2">System Confirmation</h5>
-            <p className="text-xs text-slate-500 font-medium px-2 mb-6 leading-relaxed">{activeConfirmation.text}</p>
-            <div className="flex gap-2 w-full">
-              <button 
-                onClick={() => setActiveConfirmation(null)} 
-                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold py-3 rounded-xl text-[11px] uppercase tracking-wider transition"
-              >
-                Cancel
-              </button>
-              <button 
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/35 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-[28px] bg-white px-8 py-8 text-center shadow-2xl">
+            <div className="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-full bg-[#EAF4F8] text-[#0B6B8A]">
+              <AlertCircle size={30} strokeWidth={2.5} />
+            </div>
+
+            <h5 className="mb-3 text-2xl font-black text-[#144B70]">
+              System Confirmation
+            </h5>
+
+            <p className="mx-auto mb-8 max-w-[280px] text-sm font-medium leading-6 text-[#5F6F8C]">
+              {activeConfirmation.text}
+            </p>
+
+            <div className="space-y-3">
+              <button
                 onClick={() => {
                   activeConfirmation.action();
                   setActiveConfirmation(null);
-                }} 
-                className="flex-1 bg-[#2c3e75] hover:bg-[#1e2b54] text-white font-extrabold py-3 rounded-xl text-[11px] uppercase tracking-wider transition shadow-md shadow-slate-200"
+                }}
+                className="h-12 w-full rounded-xl bg-[#0B6B8A] text-sm font-black uppercase tracking-wide text-white shadow-md transition hover:bg-[#095A74] active:scale-[0.98]"
               >
                 Confirm
+              </button>
+
+              <button
+                onClick={() => setActiveConfirmation(null)}
+                className="h-12 w-full rounded-xl border border-[#0B6B8A] bg-white text-sm font-black uppercase tracking-wide text-[#0B6B8A] transition hover:bg-[#EAF4F8]"
+              >
+                Cancel
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* NEW SYSTEM: Status Alert Overlay matching your exact branding */}
       {notificationMessage && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#2c3e75]/20">
           <div className="bg-[#2c3e75] text-white w-full max-w-xs rounded-2xl p-5 shadow-2xl border border-[#1e2b54] text-center">
             <p className="text-xs font-bold uppercase tracking-wider mb-4 text-slate-100">{notificationMessage}</p>
-            <button 
-              onClick={() => setNotificationMessage(null)} 
+            <button
+              onClick={() => setNotificationMessage(null)}
               className="w-full bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition"
             >
               Acknowledge

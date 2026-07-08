@@ -10,7 +10,12 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  BarChart2
+  BarChart2,
+  Flag,
+  CircleQuestionMark,
+  Search,
+  HandHelping,
+  Handshake
 } from 'lucide-react';
 
 const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
@@ -49,7 +54,7 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
     {
       id: 'Lost Items',
       label: 'Lost Items',
-      icon: AlertTriangle,
+      icon: Search,
       path:
         normalizedRole === 'moderator'
           ? '/dashboard/moderator-lost'
@@ -58,7 +63,7 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
     {
       id: 'Surrendered Items',
       label: 'Surrendered Items',
-      icon: CheckCircle,
+      icon: Flag,
       path: '/dashboard/surrendered-items'
     },
     {
@@ -70,7 +75,7 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
     {
       id: 'Claims',
       label: 'Claims',
-      icon: CheckCircle,
+      icon: Handshake,
       path: '/dashboard/claim-requests'
     },
     ...(normalizedRole === 'admin'
