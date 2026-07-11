@@ -150,7 +150,6 @@ const Dashboard = () => {
           uppercase
           tracking-[0.2em]
           text-slate-800
-          italic
           mb-4
           ">
           Reports Overview
@@ -215,8 +214,8 @@ const Dashboard = () => {
         <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
           <div className="p-6 sm:p-7 border-b border-slate-100 bg-slate-50/40 flex justify-between items-center">
             <div>
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] italic">Recent Registry Stream</h3>
-              <p className="text-[11px] text-slate-400 font-sans italic mt-0.5">Real-time telemetry from institutional platforms</p>
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em]">Recent Registry Stream</h3>
+              <p className="text-[11px] text-slate-400 font-sans mt-0.5">Real-time telemetry from institutional platforms</p>
             </div>
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -292,7 +291,7 @@ const Dashboard = () => {
           
           {/* Insights Box */}
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm">
-            <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] mb-4 border-b pb-4 italic">Quick Analytics</h3>
+            <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] mb-4 border-b pb-4">Quick Analytics</h3>
             
             <div className="space-y-4">
               <div className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-2xl transition-colors">

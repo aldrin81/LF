@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Eye, X, CheckCircle, Trash2, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getItems, getItemById, API_URL, editLostItem, createLostItem } from "../api/api";
-import ItemDetailModal from '../components/ItemDetailModal';
 import { Form } from 'react-router-dom';
 import PhotoUpload from '../components/PhotoUpload';
 
@@ -333,14 +333,14 @@ const LostItems = ({ currentFilter,role }) => {
   const { lostItems, addLostItem, updateLostItem, deleteLostItem } = useApp();
   const [search,   setSearch]   = useState('');
   const [addOpen,  setAddOpen]  = useState(false);
-  const [viewItem, setViewItem] = useState(false);
-  const [delItem,  setDelItem]  = useState(null);
   const [items, setItems] = useState([]);
   const [editItem, setEditItem] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [activeConfirmation, setActiveConfirmation] = useState(null);
+  const [notificationMessage, setNotificationMessage] = useState(null);
   
   const tableContainerRef = useRef(null);
-
 
   useEffect(() => {
     fetchItems();
@@ -384,6 +384,16 @@ const LostItems = ({ currentFilter,role }) => {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
   }
+
+  const getImageUrl = (img) => {
+      if (!img) return null;
+      const first = Array.isArray(img) ? img[0] : img;
+      if (!first) return null;
+      const path = typeof first === 'string' ? first : (first.image || first.file || first.url);
+      if (!path) return null;
+      return path.startsWith('http') ? path : `${API_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+    };
+
 
   async function handleView(item) {
     try {
@@ -614,151 +624,119 @@ const visiblePages = getVisiblePages();
       </div>
 
       {/* Content */}
-      <div ref={tableContainerRef} className="flex-1 overflow-y-auto bg-white">
-        <table className="w-full min-w-[1000px] table-fixed border-separate border-spacing-0">
-          <thead className="sticky top-0 z-10">
-            <tr>
-             <th className="bg-[#0B6B8A] p-4 w-[12%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                Item Id
-              </th>
+      <div ref={tableContainerRef} className="max-h-[calc(100vh-260px)] overflow-auto bg-white">
+          <table className="w-full min-w-[1000px] table-fixed border-separate border-spacing-0">
+            <thead className="sticky top-0 z-10">
+              <tr>
+                <th className="w-[20%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Item Ticket
+                </th>
+                <th className="w-[13%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Item Name
+                </th>
+                <th className="w-[15%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Category
+                </th>
+                <th className="w-[16%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Reported By
+                </th>
+                <th className="w-[17%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Area
+                </th>
+                <th className="w-[16%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Estimation Date
+                </th>
+                <th className="w-[15%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Status
+                </th>
+                <th className="w-[18%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
+                  Action
+                </th>
+              </tr>
+            </thead>
 
-              <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                Item Name
-              </th>
-
-              <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                Category
-              </th>
-
-              <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                Reported By
-              </th>
-
-              <th className="bg-[#0B6B8A] p-4 w-[20%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                Area
-              </th>
-
-              <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                Estimation Date
-              </th>
-
-              <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                Status
-              </th>
-
-              <th className="bg-[#0B6B8A] p-4 w-[18%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                Action
-              </th>
-
-            </tr>
-          </thead>
-
-          <tbody className="bg-white">
+            <tbody className="bg-white">
               {paginatedItems.length > 0 ? (
-              paginatedItems.map((item, index) => (
-                <tr
-                  key={item.id}
-                  className={`h-[70px] transition-colors ${
-                    index % 2 === 0 ? "bg-white" : "bg-[#F6FAFF]"
-                  } hover:bg-[#EAF4FF]`}
-                >
-                  <td className="p-2 font-bold text-[#071E3D] text-center align-middle truncate border-b border-[#D8E2EF]">
-                    L{startIndex + index + 1}
-                  </td>
+                paginatedItems.map((item, index) => (
+                  <tr
+                    key={item.id}
+                    className={`h-[70px] transition-colors ${
+                      index % 2 === 0 ? "bg-white" : "bg-[#F6FAFF]"
+                    } hover:bg-[#EAF4FF]`}
+                  >
+                    <td className="border-b border-[#D8E2EF] p-2 text-center align-middle font-bold text-[#071E3D]">
+                      {item.ticket_code}
+                    </td>
 
-                  <td className="p-4 font-bold text-[#071E3D] text-center align-middle truncate border-b border-[#D8E2EF]">
-                    {toTitleCase(item.title)}
-                  </td>
+                    <td className="truncate border-b border-[#D8E2EF] p-4 text-center align-middle font-bold text-[#071E3D]">
+                      {toTitleCase(item.title)}
+                    </td>
 
-                  <td className="p-4 text-[#071E3D] text-center align-middle border-b border-[#D8E2EF]">
-                    <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-[#EEF4FA] text-[#2D366D] font-bold text-[13px] uppercase tracking-wide">
-                      {toTitleCase(item.category)}
-                    </span>
-                  </td>
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle text-[#071E3D]">
+                      <span className="inline-flex items-center justify-center rounded-full bg-[#EEF4FA] px-3 py-1 text-[13px] font-bold uppercase tracking-wide text-[#2D366D]">
+                        {toTitleCase(item.category) || '-'}
+                      </span>
+                    </td>
 
-                  <td className="p-4 text-[#52627A] text-center align-middle truncate border-b border-[#D8E2EF]">
-                    {toTitleCase(item.poster_name)}
-                  </td>
+                    <td className="truncate border-b border-[#D8E2EF] p-4 text-center align-middle text-[#52627A]">
+                      {toTitleCase(item.poster_name) || '-'}
+                    </td>
 
-                  <td className="p-4 text-[#071E3D] text-center align-middle border-b border-[#D8E2EF]">
-                    <div className="flex items-center justify-center gap-1.5 truncate">
-                      <span>{toTitleCase(item.location)}</span>
-                    </div>
-                  </td>
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle text-[#071E3D]">
+                      <div className="flex items-center justify-center gap-1.5 truncate">
+                        <span>{toTitleCase(item.location) || '-'}</span>
+                      </div>
+                    </td>
 
-                  <td className="p-4 text-center align-middle border-b border-[#D8E2EF]">
-                    <span className="block font-bold text-[#071E3D] text-[15px]">
-                      {item.created_date}
-                    </span>
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
+                      <span className="block text-[15px] font-bold text-[#071E3D]">
+                        {item.created_date || '-'}
+                      </span>
+                      <span className="block text-[15px] font-black uppercase tracking-wide text-[#7B8AA6]">
+                        {item.created_time || '-'}
+                      </span>
+                    </td>
 
-                    <span className="block text-[15px] text-[#7B8AA6] uppercase font-black tracking-wide">
-                      {item.created_time}
-                    </span>
-                  </td>
-
-                  <td className="p-4 text-center align-middle border-b border-[#D8E2EF]">
-                    <span
-                      className={`px-3 py-1 rounded-full font-black text-[13px] uppercase tracking-wider ${statusColor(
-                        item.status
-                      )}`}
-                    >
-                      {item.status}
-                    </span>
-                  </td>
-
-                  <td className="p-4 text-center align-middle border-b border-[#D8E2EF]">
-                    <div className="flex justify-center items-center gap-2">
-                      <button
-                        onClick={() => handleView(item)}
-                        className="bg-[#0B6B8A] text-white hover:bg-[#095A74] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
+                      <span
+                        className={`rounded-full px-3 py-1 text-[13px] font-black uppercase tracking-wider ${statusColor(item.status)}`}
                       >
-                        View
-                      </button>
+                        {item.status}
+                      </span>
+                    </td>
 
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="bg-white border border-[#C79A2B] text-[#9A741C] hover:bg-[#FFF8E8] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
-                      >
-                        Edit
-                      </button>
-
-                      {role === "Admin" && (
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
+                      <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => setDelItem(item)}
-                          className="bg-white border border-red-300 text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                          onClick={() => setSelectedItem(item)}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0B6B8A] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-[#095A74]"
                         >
-                          Delete
+                          <Eye size={14} strokeWidth={3} />
+                          Review
                         </button>
-                      )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8} className="bg-white py-24 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <span className="text-4xl font-black tracking-tighter text-[#071E3D] opacity-20">
+                        EMPTY
+                      </span>
+                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#7B8AA6]">
+                        No items found for "{search}"
+                      </p>
                     </div>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7} className="bg-white text-center py-32">
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-[#EEF4FA] flex items-center justify-center text-3xl">
-                      📦
-                    </div>
-
-                    <span className="text-4xl opacity-20 font-black tracking-tighter text-[#071E3D]">
-                      EMPTY
-                    </span>
-
-                    <p className="text-xs font-sans tracking-[0.2em] uppercase font-bold text-[#7B8AA6]">
-                      No active records found
-                    </p>
-                  </div>
-                </td>
-              </tr>
-            )}
-              
-            
-          </tbody>
-        </table>
-      </div>
-      {filteredLost.length > 0 && (
+              )}
+            </tbody>
+          </table>
+          
+        </div>
+        {filteredLost.length > 0 && (
             <div className="flex flex-col gap-4 border-t border-[#D8E2EF] bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-bold text-[#7B8AA6]">
                 Showing {startIndex + 1}-
@@ -802,8 +780,213 @@ const visiblePages = getVisiblePages();
               </div>
             </div>
           )}
+      </div>
 
-      {/* Modal Interfaces */}
+      {selectedItem && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedItem(null);
+          }}
+        >
+          <div className="w-full max-w-4xl max-h-[92vh] overflow-hidden rounded-md bg-white shadow-2xl">
+            <div className="flex items-start justify-between bg-[#1478a7] px-6 py-3 text-white">
+              <div>
+                <h3 className="text-2xl font-bold">Item Review</h3>
+                <p className="mt-1 text-sm text-white/90">
+                  Review lost item details before approval
+                </p>
+              </div>
+
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="max-h-[calc(92vh-88px)] overflow-y-auto px-6 py-5">
+              <div className="mx-auto max-w-3xl space-y-4">
+                <img
+                  src={getImageUrl(selectedItem.image || selectedItem.images || selectedItem.file) || "https://via.placeholder.com/900x500?text=No+Image"}
+                  className="h-72 w-full rounded-xl border border-slate-200 bg-slate-100 object-cover"
+                  alt="Item Preview"
+                />
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Item Name</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg font-bold text-slate-700">
+                      {toTitleCase(selectedItem.title) || '-'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Reported By</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {toTitleCase(selectedItem.poster_name) || '-'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Category</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {toTitleCase(selectedItem.category) || '-'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Area Lost</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {toTitleCase(selectedItem.location) || '-'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Date Reported</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {selectedItem.created_date || '-'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Status</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      <span className={`rounded-full px-3 py-1 text-[13px] font-black uppercase tracking-wider ${statusColor(selectedItem.status)}`}>
+                        {selectedItem.status || '-'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Description</p>
+                  <div className="min-h-[96px] rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                    {selectedItem.description || 'No description provided.'}
+                  </div>
+                </div>
+
+                {selectedItem.status === 'Approved' && (
+                  <div className="flex items-center gap-4 rounded-xl border border-green-200 bg-green-50 p-4">
+                    <div className="rounded-xl bg-green-500 p-2 text-white shadow-md">
+                      <CheckCircle size={18} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black uppercase text-green-700">Item Publicly Visible</p>
+                      <p className="text-xs font-bold uppercase text-green-600">
+                        This item has been approved and is now visible to users.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+                  {selectedItem.status === 'Pending' ? (
+                    <>
+                      <button
+                        onClick={() => setActiveConfirmation({
+                          text: "Are you sure you want to approve this item?",
+                          action: () => handleUpdateStatus(selectedItem, 'Approved')
+                        })}
+                        className="rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] py-3 text-base font-semibold uppercase tracking-wide text-white shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
+                      >
+                        Approve Item
+                      </button>
+                      <button
+                        onClick={() => setActiveConfirmation({
+                          text: "Are you sure you want to decline this item?",
+                          action: () => handleDelete(selectedItem.id)
+                        })}
+                        className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
+                      >
+                        Decline
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {selectedItem.status === 'Approved' && (
+                        <button
+                          onClick={() => setActiveConfirmation({
+                            text: "Are you sure you want to change this item's status to Claimed?",
+                            action: () => handleUpdateStatus(selectedItem, 'Claimed')
+                          })}
+                          className="rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] py-3 text-base font-semibold uppercase tracking-wide text-white shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D]"
+                        >
+                          Mark Claimed
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setSelectedItem(null)}
+                        className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
+                      >
+                        Close
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeConfirmation && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/35 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-[28px] bg-white px-8 py-8 text-center shadow-2xl">
+            <div className="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-full bg-[#EAF4F8] text-[#0B6B8A]">
+              <AlertCircle size={30} strokeWidth={2.5} />
+            </div>
+
+            <h5 className="mb-3 text-2xl font-black text-[#144B70]">
+              System Confirmation
+            </h5>
+
+            <p className="mx-auto mb-8 max-w-[280px] text-sm font-medium leading-6 text-[#5F6F8C]">
+              {activeConfirmation.text}
+            </p>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  activeConfirmation.action();
+                  setActiveConfirmation(null);
+                }}
+                className="h-12 w-full rounded-xl bg-[#0B6B8A] text-sm font-black uppercase tracking-wide text-white shadow-md transition hover:bg-[#095A74] active:scale-[0.98]"
+              >
+                Confirm
+              </button>
+
+              <button
+                onClick={() => setActiveConfirmation(null)}
+                className="h-12 w-full rounded-xl border border-[#0B6B8A] bg-white text-sm font-black uppercase tracking-wide text-[#0B6B8A] transition hover:bg-[#EAF4F8]"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notificationMessage && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#2c3e75]/20">
+          <div className="bg-[#2c3e75] text-white w-full max-w-xs rounded-2xl p-5 shadow-2xl border border-[#1e2b54] text-center">
+            <p className="text-xs font-bold uppercase tracking-wider mb-4 text-slate-100">{notificationMessage}</p>
+            <button
+              onClick={() => setNotificationMessage(null)}
+              className="w-full bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition"
+            >
+              Acknowledge
+            </button>
+          </div>
+        </div>
+      )}
+
       {addOpen && (
         <ItemModal
           onSave={handleAddItem}
@@ -818,16 +1001,6 @@ const visiblePages = getVisiblePages();
           onClose={() => setEditItem(null)}
         />
       )}
-
-      {viewItem && (
-        <ItemDetailModal
-          item={viewItem}
-          onClose={() => setViewItem(null)}
-          onClaim={handleClaimItem}
-        />
-      )}
-
-    </div>
     </div>
   );
 };

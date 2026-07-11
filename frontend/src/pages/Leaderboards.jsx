@@ -196,36 +196,6 @@ close_date:data.close_date || ""
             Ranked by earned surrender and claim points
           </p>
 
-
-
-          {settings && (
-
-            <div className="mt-3">
-
-              <span
-                className={`rounded-full px-3 py-1 text-sm font-bold ${
-                  settings.is_active
-                  ?
-                  "bg-green-100 text-green-700"
-                  :
-                  "bg-red-100 text-red-700"
-                }`}
-              >
-
-                {
-                  settings.is_active
-                  ?
-                  "🟢 Leaderboard Active"
-                  :
-                  "🔴 Leaderboard Inactive"
-                }
-
-              </span>
-
-            </div>
-
-          )}
-
         </div>
 
 
@@ -295,7 +265,7 @@ close_date:data.close_date || ""
 
 
               <p className="mt-2 text-slate-400">
-                Administrator has disabled rankings.
+                
               </p>
 
             </div>

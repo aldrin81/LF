@@ -602,22 +602,22 @@ const visiblePages = getVisiblePages();
             <table className="w-full min-w-[1000px] table-fixed border-separate border-spacing-0">
               <thead className="sticky top-0 z-10">
                 <tr>
-                  <th className="bg-[#0B6B8A] p-4 w-[12%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                    Item Id
+                  <th className="bg-[#0B6B8A] p-4 w-[20%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
+                    Item Ticket
                   </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
+                  <th className="bg-[#0B6B8A] p-4 w-[13%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Item Name
                   </th>
                   <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Category
                   </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                    Surrerendered By
+                  <th className="bg-[#0B6B8A] p-4 w-[16%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
+                    Reported By
                   </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[20%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
+                  <th className="bg-[#0B6B8A] p-4 w-[17%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Area
                   </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
+                  <th className="bg-[#0B6B8A] p-4 w-[16%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
                     Estimation Date
                   </th>
                   <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
@@ -633,52 +633,51 @@ const visiblePages = getVisiblePages();
                 {paginatedItems.length > 0 ? (
                   paginatedItems.map((item, index) => (
                     <tr
-                      key={item.id}
-                      className={`h-[76px] transition-colors ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-[#F6FAFF]'
-                      } hover:bg-[#EAF4FF]`}
-                    >
-                      <td className="p-4 font-bold text-[#071E3D] text-center align-middle truncate border-b border-[#D8E2EF]">
-                        F{startIndex + index + 1}
-                      </td>
+                    key={item.id}
+                    className={`h-[70px] transition-colors ${
+                      index % 2 === 0 ? "bg-white" : "bg-[#F6FAFF]"
+                    } hover:bg-[#EAF4FF]`}
+                  >
+                    <td className="border-b border-[#D8E2EF] p-2 text-center align-middle font-bold text-[#071E3D]">
+                      {item.ticket_code}
+                    </td>
 
-                      <td className="p-4 font-bold text-[#071E3D] text-center align-middle truncate border-b border-[#D8E2EF]">
-                        {toTitleCase(item.title)}
-                      </td>
+                    <td className="truncate border-b border-[#D8E2EF] p-4 text-center align-middle font-bold text-[#071E3D]">
+                      {toTitleCase(item.title)}
+                    </td>
 
-                      <td className="p-4 text-[#071E3D] text-center align-middle border-b border-[#D8E2EF]">
-                        <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-[#EEF4FA] text-[#2D366D] font-bold text-[13px] uppercase tracking-wide">
-                          {toTitleCase(item.category)}
-                        </span>
-                      </td>
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle text-[#071E3D]">
+                      <span className="inline-flex items-center justify-center rounded-full bg-[#EEF4FA] px-3 py-1 text-[13px] font-bold uppercase tracking-wide text-[#2D366D]">
+                        {toTitleCase(item.category) || '-'}
+                      </span>
+                    </td>
 
-                      <td className="p-4 text-[#52627A] text-center align-middle truncate border-b border-[#D8E2EF]">
-                        {toTitleCase(item.poster_name)}
-                      </td>
+                    <td className="truncate border-b border-[#D8E2EF] p-4 text-center align-middle text-[#52627A]">
+                      {toTitleCase(item.poster_name) || '-'}
+                    </td>
 
-                      <td className="p-4 text-[#071E3D] text-center align-middle border-b border-[#D8E2EF]">
-                        <div className="flex items-center justify-center gap-1.5 truncate">
-                          <span className="text-[#C79A2B] text-xs">📍</span>
-                          <span>{toTitleCase(item.location)}</span>
-                        </div>
-                      </td>
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle text-[#071E3D]">
+                      <div className="flex items-center justify-center gap-1.5 truncate">
+                        <span>{toTitleCase(item.location) || '-'}</span>
+                      </div>
+                    </td>
 
-                      <td className="p-4 text-center align-middle border-b border-[#D8E2EF]">
-                        <span className="block font-bold text-[#071E3D] text-[15px]">
-                          {item.created_date}
-                        </span>
-                        <span className="block text-[15px] text-[#7B8AA6] uppercase font-black tracking-wide">
-                          {item.created_time}
-                        </span>
-                      </td>
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
+                      <span className="block text-[15px] font-bold text-[#071E3D]">
+                        {item.created_date || '-'}
+                      </span>
+                      <span className="block text-[15px] font-black uppercase tracking-wide text-[#7B8AA6]">
+                        {item.created_time || '-'}
+                      </span>
+                    </td>
 
-                      <td className="p-4 text-center align-middle border-b border-[#D8E2EF]">
-                        <span
-                          className={`px-3 py-1 rounded-full font-black text-[13px] uppercase tracking-wider ${statusColor(item.status)}`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
+                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
+                      <span
+                        className={`rounded-full px-3 py-1 text-[13px] font-black uppercase tracking-wider ${statusColor(item.status)}`}
+                      >
+                        {item.status}
+                      </span>
+                    </td>
 
                       <td className="p-4 text-center align-middle border-b border-[#D8E2EF]">
                         <div className="flex justify-center items-center gap-2">
