@@ -1,3 +1,4 @@
-".env" 
--e "\n# Keep these local-only\n.gitignore\n.gitattributes\npackage-lock.json" 
-
+../.env
+../.gitignore
+../.gitattributes
+../package-lock.json

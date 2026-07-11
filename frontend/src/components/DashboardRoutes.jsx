@@ -10,6 +10,7 @@ import ClaimRequests from "../pages/ClaimRequests";
 import Leaderboard from "../pages/Leaderboards";
 
 import RequireRole from "../components/RequireRole";
+import LeaderboardControl from "../pages/LeaderboardControl";
 
 const DashboardRoutes = () => {
   return (
@@ -21,7 +22,12 @@ const DashboardRoutes = () => {
       <Route path="surrendered-items" element={<FoundItems />} />
       <Route path="reports" element={<Reports />} />
       <Route path="claim-requests" element={<ClaimRequests />} />
-      <Route path="leaderboard" element={<Leaderboard />} />
+      <Route
+        path="leaderboard"
+        element={
+            <LeaderboardControl />
+        }
+      />
 
       {/* MODERATOR ONLY */}
       <Route

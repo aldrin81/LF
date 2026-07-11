@@ -281,59 +281,22 @@ export async function changePassword(
 // =====================
 
 
-export const getLeaderboard = async()=>{
-
-  const res = await api.get(
-    "gamification/leaderboard/"
-  );
-
+export const getLeaderboard = async () => {
+  const res = await api.get("gamification/leaderboard/");
   return res.data;
-
 };
 
-
-
-export const getLeaderboardSettings = async()=>{
-
-  const res = await api.get(
-    "gamification/settings/"
-  );
-
+export const getPointsTracking = async () => {
+  const res = await api.get("gamification/points-tracking/");
   return res.data;
-
 };
 
-
-
-export const updateLeaderboardSettings = async(data)=>{
-
-  const token =
-    localStorage.getItem("accessToken");
-
-
-  const res = await api.put(
-    "gamification/settings/update/",
-    data,
-    {
-      headers:{
-        Authorization:`Bearer ${token}`
-      }
-    }
-  );
-
-
+export const getLeaderboardSettings = async () => {
+  const res = await api.get("gamification/settings/");
   return res.data;
-
 };
 
-
-
-export const getPointsTracking = async()=>{
-
-  const res = await api.get(
-    "gamification/points-tracking/"
-  );
-
+export const updateLeaderboardSettings = async (data) => {
+  const res = await api.put("gamification/settings/update/", data);
   return res.data;
-
 };

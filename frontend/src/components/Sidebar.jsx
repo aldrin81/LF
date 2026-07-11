@@ -70,20 +70,13 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
     path: "/dashboard/surrendered-items",
   },
 
-  // Admin & Moderator Only
-  ...(
-    normalizedRole === "admin" ||
-    normalizedRole === "moderator"
-      ? [
-          {
-            id: "Leaderboard",
-            label: "Leaderboard",
-            icon: Trophy,
-            path: "/dashboard/leaderboard",
-          },
-        ]
-      : []
-  ),
+ 
+  {
+    id: "Leaderboard",
+    label: "Leaderboard",
+    icon: Trophy,
+    path: "/dashboard/leaderboard",
+  },
 
   {
     id: "Reports",
