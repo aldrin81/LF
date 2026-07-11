@@ -15,8 +15,9 @@ import {
   CircleQuestionMark,
   Search,
   HandHelping,
-  Handshake
-} from 'lucide-react';
+  Handshake,
+  Trophy
+} from "lucide-react";
 
 const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
   const { pathname } = useLocation();
@@ -45,50 +46,70 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
 }, []);
 
   const menuItems = [
-    {
-      id: 'Dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      path: '/dashboard'
-    },
-    {
-      id: 'Lost Items',
-      label: 'Lost Items',
-      icon: Search,
-      path:
-        normalizedRole === 'moderator'
-          ? '/dashboard/moderator-lost'
-          : '/dashboard/lost-items'
-    },
-    {
-      id: 'Surrendered Items',
-      label: 'Surrendered Items',
-      icon: Flag,
-      path: '/dashboard/surrendered-items'
-    },
-    {
-      id: 'Reports',
-      label: 'Reports',
-      icon: BarChart2,
-      path: '/dashboard/reports'
-    },
-    {
-      id: 'Claims',
-      label: 'Claims',
-      icon: Handshake,
-      path: '/dashboard/claim-requests'
-    },
-    ...(normalizedRole === 'admin'
+  {
+    id: "Dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    path: "/dashboard",
+  },
+
+  {
+    id: "Lost Items",
+    label: "Lost Items",
+    icon: Search,
+    path:
+      normalizedRole === "moderator"
+        ? "/dashboard/moderator-lost"
+        : "/dashboard/lost-items",
+  },
+
+  {
+    id: "Surrendered Items",
+    label: "Surrendered Items",
+    icon: Flag,
+    path: "/dashboard/surrendered-items",
+  },
+
+  // Admin & Moderator Only
+  ...(
+    normalizedRole === "admin" ||
+    normalizedRole === "moderator"
       ? [
           {
-            id: 'Users',
-            label: 'Users',
-            icon: Users,
-            path: '/dashboard/users'
-          }
+            id: "Leaderboard",
+            label: "Leaderboard",
+            icon: Trophy,
+            path: "/dashboard/leaderboard",
+          },
         ]
-      : [])
-  ];
+      : []
+  ),
+
+  {
+    id: "Reports",
+    label: "Reports",
+    icon: BarChart2,
+    path: "/dashboard/reports",
+  },
+
+  {
+    id: "Claims",
+    label: "Claims",
+    icon: Handshake,
+    path: "/dashboard/claim-requests",
+  },
+
+  ...(normalizedRole === "admin"
+    ? [
+        {
+          id: "Users",
+          label: "Users",
+          icon: Users,
+          path: "/dashboard/users",
+        },
+      ]
+    : []),
+];
 
   return (
     <>

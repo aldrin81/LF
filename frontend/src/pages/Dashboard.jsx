@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, Package, Users, ShieldAlert, Sparkles, Activity } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Package, Users, ShieldAlert, Sparkles, Activity, MapPin, Award } from 'lucide-react';
 import { getItems, getUsers } from '../api/api';
 
 const statusColor = (s) =>
@@ -72,11 +72,32 @@ const Dashboard = () => {
   const totalUsers = users.length;
   const recoveryPct = totalLost === 0 ? 0 : Math.round((totalClaimed / totalLost) * 100);
   const pendingCount = items.filter(i => i.status === 'Pending').length;
+  const recoveryRate =
+    totalLost === 0
+    ? 0
+    : Math.round((totalClaimed / totalLost) * 100);
 
-  const recent = [...items]
-    .map((item) => ({ ...item, itemType: item.type }))
-    .sort((a, b) => b.id - a.id)
-    .slice(0, 6);
+
+  const locations = {};
+
+  items.forEach(item => {
+    if(item.type === "Lost"){
+      locations[item.location] =
+        (locations[item.location] || 0) + 1;
+    }
+  });
+
+
+  const hotspot =
+    Object.keys(locations).length > 0
+    ? Object.keys(locations).reduce((a,b)=>
+        locations[a] > locations[b] ? a : b
+      )
+    : "None";
+    const recent = [...items]
+      .map((item) => ({ ...item, itemType: item.type }))
+      .sort((a, b) => b.id - a.id)
+      .slice(0, 6);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 font-sans pb-10">
@@ -120,7 +141,73 @@ const Dashboard = () => {
         <StatCard label="Resolved Matches" count={totalClaimed} icon={Package} color="text-purple-500" bgColor="bg-purple-50" description="Successfully turned over" />
         <StatCard label="System Operators" count={totalUsers} icon={Users} color="text-indigo-500" bgColor="bg-indigo-50" description="Authorized active roles" />
       </div>
+          {/* ─── Reports Overview ─── */}
+          <div>
 
+          <h3 className="
+          text-xs
+          font-black
+          uppercase
+          tracking-[0.2em]
+          text-slate-800
+          italic
+          mb-4
+          ">
+          Reports Overview
+          </h3>
+
+
+          <div className="
+          grid
+          grid-cols-2
+          lg:grid-cols-4
+          gap-4
+          ">
+
+
+          <StatCard
+          label="Recovery Rate"
+          count={`${recoveryRate}%`}
+          icon={Award}
+          color="text-indigo-500"
+          bgColor="bg-indigo-50"
+          description="Successfully resolved cases"
+          />
+
+
+          <StatCard
+          label="Lost Items"
+          count={totalLost}
+          icon={AlertCircle}
+          color="text-rose-500"
+          bgColor="bg-rose-50"
+          description="Reported missing items"
+          />
+
+
+          <StatCard
+          label="Surrendered"
+          count={totalSurrendered}
+          icon={CheckCircle2}
+          color="text-emerald-500"
+          bgColor="bg-emerald-50"
+          description="Items turned over"
+          />
+
+
+          <StatCard
+          label="Top Hotspot"
+          count={hotspot}
+          icon={MapPin}
+          color="text-orange-500"
+          bgColor="bg-orange-50"
+          description="Most reported location"
+          />
+
+
+          </div>
+
+          </div>
       {/* ─── Main Content Layers ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         

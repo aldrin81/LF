@@ -7,6 +7,7 @@ import Reports from "../pages/Reports";
 import Users from "../pages/Users";
 import ModeratorLostItems from "../pages/ModeratorLostItems";
 import ClaimRequests from "../pages/ClaimRequests";
+import Leaderboard from "../pages/Leaderboards";
 
 import RequireRole from "../components/RequireRole";
 
@@ -20,6 +21,8 @@ const DashboardRoutes = () => {
       <Route path="surrendered-items" element={<FoundItems />} />
       <Route path="reports" element={<Reports />} />
       <Route path="claim-requests" element={<ClaimRequests />} />
+      <Route path="leaderboard" element={<Leaderboard />} />
+
       {/* MODERATOR ONLY */}
       <Route
         path="moderator-lost"

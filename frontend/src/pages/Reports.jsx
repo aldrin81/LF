@@ -1,343 +1,1145 @@
-import React, { useState, useEffect } from 'react';
-import { Award, AlertTriangle, CheckCircle2, MapPin, Sparkles, Activity } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import {
+  Award,
+  AlertTriangle,
+  CheckCircle2,
+  MapPin,
+  Sparkles,
+  Printer
+} from "lucide-react";
+import { getItems } from "../api/api";
 
-// ─── Pure Helpers ─────────────────────────────────────────────────────────────
-const pct = (a, b) => (b === 0 ? 0 : Math.round((a / b) * 100));
+
+// ================= HELPERS =================
+
+const pct = (a, b) =>
+  b === 0 ? 0 : Math.round((a / b) * 100);
+
 
 const riskLevel = (lost) =>
-  lost >= 15 ? 'High Risk' : lost >= 8 ? 'Medium Risk' : 'Low Risk';
+  lost >= 15
+    ? "High Risk"
+    : lost >= 8
+    ? "Medium Risk"
+    : "Low Risk";
+
 
 const riskColor = (risk) =>
-  risk.startsWith('High')   ? 'bg-rose-50 text-rose-600 border border-rose-100'
-  : risk.startsWith('Medium') ? 'bg-amber-50 text-amber-600 border border-amber-100'
-  : 'bg-emerald-50 text-emerald-600 border border-emerald-100';
+  risk.startsWith("High")
+    ? "bg-rose-50 text-rose-600 border border-rose-100"
+    : risk.startsWith("Medium")
+    ? "bg-amber-50 text-amber-600 border border-amber-100"
+    : "bg-emerald-50 text-emerald-600 border border-emerald-100";
+
 
 const pctColor = (p) =>
-  p >= 70 ? 'text-emerald-600' : p >= 50 ? 'text-amber-600' : 'text-rose-500';
+  p >= 70
+    ? "text-emerald-600"
+    : p >= 50
+    ? "text-amber-600"
+    : "text-rose-500";
 
-const CAT_COLORS = { Personal: '#2D366D', Electronics: '#87CEEB', Accessories: '#22C55E', 'Cash/Cards': '#F59E0B' };
 
-// ─── Stat Card Component ──────────────────────────────────────────────────────
-const StatCard = ({ label, count, icon: Icon, color, bgColor, description }) => (
-  <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group relative flex flex-col justify-between overflow-hidden">
-    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.07] transition-all duration-500 transform group-hover:scale-125 group-hover:-rotate-12 text-slate-900">
-      <Icon size={120} />
-    </div>
-    
-    <div className="flex justify-between items-start relative z-10">
+// ================= STAT CARD =================
+
+const StatCard = ({
+  label,
+  count,
+  icon: Icon,
+  color,
+  bgColor,
+  description
+}) => (
+  <div className="bg-white p-6 rounded-3xl border shadow-sm print:shadow-none">
+
+    <div className="flex justify-between">
+
       <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 mb-1.5">{label}</p>
-        <h3 className="text-3xl font-black text-slate-800 tracking-tight font-sans truncate max-w-[140px] md:max-w-none">{count}</h3>
+        <p className="text-[10px] uppercase font-black text-slate-400">
+          {label}
+        </p>
+
+        <h3 className="text-3xl font-black text-slate-800">
+          {count}
+        </h3>
       </div>
-      <div className={`${bgColor} ${color} p-3 rounded-2xl shadow-sm border border-white/50 group-hover:scale-110 transition-transform duration-300`}>
-        <Icon size={20} className="stroke-[2.5]" />
+
+
+      <div className={`${bgColor} ${color} p-3 rounded-xl`}>
+        <Icon size={20}/>
       </div>
+
     </div>
 
-    <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between relative z-10">
-      <span className="text-[11px] font-medium text-slate-400 tracking-wide w-full">{description}</span>
-    </div>
+
+    <p className="mt-4 text-xs text-slate-400">
+      {description}
+    </p>
+
   </div>
 );
 
-// ─── Animated Donut ───────────────────────────────────────────────────────────
-const Donut = ({ segments, cx=90, cy=90, r=68, strokeW=20, label, sublabel }) => {
-  const [go, setGo] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setGo(true), 120); return () => clearTimeout(t); }, []);
 
-  const circ = 2 * Math.PI * r;
-  const total = segments.reduce((s, d) => s + d.value, 0) || 1;
-  let off = circ / 4;
+
+// ================= DONUT =================
+
+const Donut = ({
+  value,
+  label,
+  color="#2D366D"
+}) => {
+
+  const radius = 55;
+  const circumference = 2 * Math.PI * radius;
+
+  const progress =
+    (value / 100) * circumference;
+
 
   return (
-    <svg width="180" height="180" viewBox="0 0 180 180" className="mx-auto">
-      <circle fill="none" stroke="#F8FAFC" strokeWidth={strokeW} cx={cx} cy={cy} r={r} />
-      {segments.map((seg, i) => {
-        const dash = go ? (seg.value / total) * circ : 0;
-        const gap  = circ - dash;
-        const el = (
-          <circle key={i} cx={cx} cy={cy} r={r}
-            fill="none" stroke={seg.color} strokeWidth={strokeW}
-            strokeDasharray={`${dash} ${gap}`}
-            strokeDashoffset={-off + circ / 4}
-            strokeLinecap="butt"
-            style={{ transition: `stroke-dasharray 1s ease ${i * 0.12}s` }}
-          />
-        );
-        off += (seg.value / total) * circ;
-        return el;
-      })}
-      {label    && <text x={cx} y={cy - 4}  textAnchor="middle" fontSize="24" fontWeight="900" fill="#2D366D" fontFamily="sans-serif" className="tracking-tighter">{label}</text>}
-      {sublabel && <text x={cx} y={cy + 14} textAnchor="middle" fontSize="8"  fontWeight="900" fill="#94A3B8" fontFamily="sans-serif" letterSpacing="2">{sublabel}</text>}
+
+    <svg width="160" height="160">
+
+      <circle
+        cx="80"
+        cy="80"
+        r={radius}
+        stroke="#E2E8F0"
+        strokeWidth="20"
+        fill="none"
+      />
+
+
+      <circle
+        cx="80"
+        cy="80"
+        r={radius}
+        stroke={color}
+        strokeWidth="20"
+        fill="none"
+        strokeDasharray={`${progress} ${circumference}`}
+        transform="rotate(-90 80 80)"
+      />
+
+
+      <text
+        x="80"
+        y="75"
+        textAnchor="middle"
+        fontSize="25"
+        fontWeight="900"
+        fill="#2D366D"
+      >
+        {value}%
+      </text>
+
+
+      <text
+        x="80"
+        y="98"
+        textAnchor="middle"
+        fontSize="9"
+        fontWeight="900"
+        fill="#94A3B8"
+      >
+        {label}
+      </text>
+
     </svg>
+
   );
+
 };
 
-// ─── Horizontal Bar ───────────────────────────────────────────────────────────
-const HBar = ({ value, max, color='#2D366D', delay=0 }) => {
-  const [go, setGo] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setGo(true), 200 + delay); return () => clearTimeout(t); }, []);
-  return (
-    <div className="h-3.5 bg-slate-100 rounded-full overflow-hidden w-full">
-      <div className="h-full rounded-full transition-all duration-700 ease-out"
-        style={{ width: go ? `${(value/max)*100}%` : '0%', background: color, transitionDelay: `${delay}ms` }} />
-    </div>
-  );
+
+
+// ================= HORIZONTAL BAR =================
+
+const HBar = ({
+  value,
+  max,
+  color="#2D366D"
+}) => (
+
+<div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+
+  <div
+    className="h-full rounded-full"
+    style={{
+      width:`${max ? (value/max)*100 : 0}%`,
+      background:color
+    }}
+  />
+
+</div>
+
+);
+
+const BarChart = ({data}) => {
+
+const max = Math.max(...data.map(x=>x.value),1);
+
+return (
+
+<div className="space-y-4">
+
+{data.map((item,index)=>(
+
+<div key={index}>
+
+<div className="flex justify-between text-xs font-bold mb-2">
+<span>{item.label}</span>
+<span>{item.value}</span>
+</div>
+
+<div className="h-4 bg-slate-100 rounded-full overflow-hidden">
+
+<div
+className="h-full bg-[#2D366D] rounded-full"
+style={{
+width:`${(item.value/max)*100}%`
+}}
+/>
+
+</div>
+
+</div>
+
+))}
+
+</div>
+
+)
+
+}
+
+
+
+// ================= MAIN =================
+
+
+export default function Reports(){
+
+
+const [items,setItems] = useState([]);
+
+const [loading,setLoading] = useState(true);
+
+
+
+useEffect(() => {
+
+  async function fetchItems(){
+
+    try{
+
+      const data = await getItems();
+
+      setItems(data || []);
+
+    }
+    catch(error){
+
+      console.log(
+        "Reports fetch error:",
+        error
+      );
+
+    }
+    finally{
+
+      setLoading(false);
+
+    }
+
+  }
+
+
+  fetchItems();
+
+
+  const interval = setInterval(()=>{
+
+    fetchItems();
+
+  },5000);
+
+
+  return () => clearInterval(interval);
+
+
+},[]);
+
+
+
+// ================= DATA PROCESSING =================
+
+
+const lostItems =
+items.filter(
+item=>item.type==="Lost"
+);
+
+
+const surrendered =
+items.filter(
+item=>item.type==="Surrendered"
+);
+
+
+
+const claimed =
+items.filter(
+item=>
+item.status==="Claimed" ||
+item.status==="Returned"
+);
+
+
+
+const recoveryRate =
+pct(
+claimed.length,
+lostItems.length
+);
+
+
+
+const locations = {};
+
+items.forEach(item=>{
+
+if(!locations[item.location])
+locations[item.location]={
+lost:0,
+recovered:0
 };
 
-// ─── Vertical Bar ─────────────────────────────────────────────────────────────
-const VBarGroup = ({ data, max }) => {
-  const [go, setGo] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setGo(true), 200); return () => clearTimeout(t); }, []);
-  return (
-    <div className="flex items-end justify-between gap-2 h-32 px-2 pt-4">
-      {data.map((d, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center gap-2">
-          <div className="flex items-end gap-1 w-full justify-center" style={{ height: '96px' }}>
-            <div className="flex-1 flex flex-col justify-end max-w-[14px]">
-              <div className="rounded-t-md bg-[#BFCBF7] transition-all duration-700 ease-out"
-                style={{ height: go ? `${(d.lost/max)*88}px` : '0px', transitionDelay: `${i*50}ms` }} />
-            </div>
-            <div className="flex-1 flex flex-col justify-end max-w-[14px]">
-              <div className="rounded-t-md bg-[#2D366D] transition-all duration-700 ease-out"
-                style={{ height: go ? `${(d.found/max)*88}px` : '0px', transitionDelay: `${i*50+25}ms` }} />
-            </div>
-          </div>
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider font-mono">{d.month}</span>
+
+if(item.type==="Lost")
+locations[item.location].lost++;
+
+
+if(
+item.status==="Claimed" ||
+item.status==="Returned"
+)
+locations[item.location].recovered++;
+
+});
+
+
+
+const areaStats =
+Object.entries(locations)
+.map(([area,data])=>({
+area,
+...data
+}))
+.sort(
+(a,b)=>b.lost-a.lost
+);
+
+
+
+const categories={};
+
+
+items.forEach(item=>{
+
+categories[item.category] =
+(categories[item.category] || 0)+1;
+
+});
+
+
+const catStats =
+Object.entries(categories)
+.map(([cat,count])=>({
+cat,
+count
+}));
+const statuses = {};
+
+items.forEach(item=>{
+
+statuses[item.status] =
+(statuses[item.status] || 0)+1;
+
+});
+
+
+const statusStats =
+Object.entries(statuses)
+.map(([label,value])=>({
+label,
+value
+}));
+
+
+const comparisonData = [
+{
+label:"Lost Items",
+value:lostItems.length
+},
+{
+label:"Surrendered Items",
+value:surrendered.length
+},
+{
+label:"Claimed Items",
+value:claimed.length
+}
+];
+
+
+const totalItems = items.length;
+
+
+const topHotspot =
+areaStats[0]?.area || "None";
+
+
+
+
+if(loading)
+
+return (
+
+<div className="p-10 text-center font-black">
+Loading Reports...
+</div>
+
+);
+
+
+
+return ( <>
+
+    <style>
+    {`
+
+@media print {
+
+
+  body {
+
+    background:white !important;
+
+  }
+
+
+
+  body * {
+
+    visibility:hidden;
+
+  }
+
+
+
+  #print-report,
+  #print-report * {
+
+    visibility:visible;
+
+  }
+
+
+
+  #print-report {
+
+
+    position:absolute;
+
+    top:0;
+
+    left:0;
+
+
+    width:117%;
+
+
+    padding:0 !important;
+
+
+    background:white !important;
+
+
+
+    transform:scale(0.85);
+
+    transform-origin:top left;
+
+
+  }
+
+
+
+  .no-print {
+
+    display:none !important;
+
+  }
+
+
+
+  .print-section {
+
+    break-inside:avoid;
+
+    page-break-inside:avoid;
+
+  }
+
+
+
+  table {
+
+    page-break-inside:auto;
+
+  }
+
+
+
+  tr {
+
+    break-inside:avoid;
+
+    page-break-inside:avoid;
+
+  }
+
+
+
+  @page {
+
+    size:A4 portrait;
+
+    margin:8mm;
+
+  }
+
+
+}
+
+`}
+    </style>
+
+
+
+    <div className="space-y-6 p-4">
+
+
+      {/* PRINT BUTTON */}
+
+      <div className="flex justify-end no-print">
+
+        <button
+
+        onClick={()=>window.print()}
+
+        className="
+        flex items-center gap-2
+        bg-[#2D366D]
+        text-white
+        px-5 py-3
+        rounded-xl
+        font-black
+        text-sm
+        hover:opacity-90
+        "
+
+        >
+
+          <Printer size={18}/>
+
+          Print Report
+
+        </button>
+
+
+      </div>
+
+
+
+
+
+      {/* PRINT AREA */}
+
+      <div
+      id="print-report"
+      className="
+      space-y-3
+      bg-white
+      p-2
+      "
+      >
+
+
+
+
+
+      {/* HEADER */}
+
+      <div
+      className="
+      bg-gradient-to-br
+      from-[#2D366D]
+      to-[#1E254E]
+      rounded-3xl
+      p-8
+      text-white
+      "
+      >
+
+        <div className="flex items-center gap-2">
+
+          <Sparkles
+          size={18}
+          className="text-orange-300"
+          />
+
+          <span className="
+          text-xs
+          font-black
+          uppercase
+          tracking-widest
+          ">
+
+            Analytical Report
+
+          </span>
+
+
         </div>
+
+
+        <h1 className="
+        text-4xl
+        font-black
+        mt-3
+        uppercase
+        italic
+        ">
+
+          Lost & Found Statistics
+
+        </h1>
+
+
+
+        <p className="mt-3 text-white/70 text-sm">
+
+  Generated from live campus item records.
+
+  Current recovery efficiency:
+
+  <b className="ml-2 text-white">
+    {recoveryRate}%
+  </b>
+
+  <br />
+
+  <span className="text-xs text-white/50">
+    Generated:
+    {" "}
+    {new Date().toLocaleDateString()}
+    {" "}
+  {new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  })}
+  </span>
+
+</p>
+
+
+      </div>
+
+
+
+
+
+      {/* STAT CARDS */}
+
+
+      <div className="
+            grid
+      grid-cols-2
+      lg:grid-cols-4
+      gap-4
+      print-section
+      ">
+
+
+      <StatCard
+
+      label="Recovery Rate"
+
+      count={`${recoveryRate}%`}
+
+      icon={Award}
+
+      color="text-indigo-600"
+
+      bgColor="bg-indigo-50"
+
+      description={`${claimed.length} recovered cases`}
+
+      />
+
+
+
+      <StatCard
+
+      label="Lost Items"
+
+      count={lostItems.length}
+
+      icon={AlertTriangle}
+
+      color="text-rose-600"
+
+      bgColor="bg-rose-50"
+
+      description="Reported missing items"
+
+      />
+
+
+
+      <StatCard
+
+      label="Found Items"
+
+      count={surrendered.length}
+
+      icon={CheckCircle2}
+
+      color="text-emerald-600"
+
+      bgColor="bg-emerald-50"
+
+      description="Surrendered items"
+
+      />
+
+
+
+      <StatCard
+
+      label="Top Hotspot"
+
+      count={topHotspot}
+
+      icon={MapPin}
+
+      color="text-amber-600"
+
+      bgColor="bg-amber-50"
+
+      description="Highest reported area"
+
+      />
+
+
+
+      </div>
+
+
+
+
+
+
+
+
+      {/* RECOVERY GRAPH */}
+
+
+      <div className="
+        bg-white
+        rounded-3xl
+        p-6
+        border
+        print-section
+      ">
+
+
+      <h2 className="
+      font-black
+      uppercase
+      text-sm
+      tracking-widest
+      ">
+
+        Recovery Performance
+
+      </h2>
+
+
+
+      <div className="flex justify-center mt-5">
+
+
+        <Donut
+
+        value={recoveryRate}
+
+        label="RECOVERED"
+
+        />
+
+
+      </div>
+
+
+      </div>
+
+
+
+
+
+
+{/* ITEM ACTIVITY COMPARISON */}
+
+<div className="
+bg-white
+rounded-3xl
+p-6
+border
+print-section
+">
+
+<h2 className="
+font-black
+uppercase
+text-sm
+tracking-widest
+mb-6
+">
+Item Activity Overview
+</h2>
+
+<BarChart
+data={comparisonData}
+/>
+
+</div>
+
+
+
+
+{/* STATUS BREAKDOWN */}
+
+<div className="
+bg-white
+rounded-3xl
+p-6
+border
+print-section
+">
+
+<h2 className="
+font-black
+uppercase
+text-sm
+tracking-widest
+mb-6
+">
+Current Status Distribution
+</h2>
+
+<BarChart
+data={statusStats}
+/>
+
+</div>
+
+      {/* CATEGORY REPORT */}
+
+
+
+      <div className="
+      bg-white
+      rounded-3xl
+      p-6
+      border
+      ">
+
+
+      <h2 className="
+      font-black
+      uppercase
+      text-sm
+      mb-5
+      tracking-widest
+      ">
+
+        Item Categories
+
+      </h2>
+
+
+
+
+      <div className="space-y-5">
+
+
+      {catStats.map((cat,index)=>(
+
+
+      <div key={index}>
+
+
+      <div className="
+      flex
+      justify-between
+      text-xs
+      font-bold
+      mb-2
+      ">
+
+
+      <span>
+      {cat.cat}
+      </span>
+
+
+      <span>
+      {cat.count}
+      </span>
+
+
+      </div>
+
+
+
+      <HBar
+
+      value={cat.count}
+
+      max={totalItems}
+
+      />
+        
+
+      </div>
+
+
       ))}
+
+
+      </div>
+
+
+      </div>
+
+
+
+
+
+
+
+
+
+
+      {/* LOCATION TABLE */}
+
+
+      <div className="
+          bg-white
+      rounded-3xl
+      border
+      overflow-hidden
+      print-section
+      ">
+
+
+
+      <div className="p-6">
+
+
+      <h2 className="
+      font-black
+      uppercase
+      text-sm
+      tracking-widest
+      ">
+
+      Location Hotspots
+
+      </h2>
+
+
+      </div>
+
+
+
+
+      <table className="w-full text-sm">
+
+
+      <thead className="
+      bg-slate-100
+      text-xs
+      uppercase
+      ">
+
+      <tr>
+
+      <th className="p-4 text-left">
+      Location
+      </th>
+
+
+      <th>
+      Lost
+      </th>
+
+
+      <th>
+      Recovered
+      </th>
+
+
+      <th>
+      Rate
+      </th>
+
+
+      <th>
+      Risk
+      </th>
+
+
+      </tr>
+
+
+      </thead>
+
+
+
+
+      <tbody>
+
+
+      {areaStats.map((area,index)=>{
+
+
+      const rate =
+      pct(
+      area.recovered,
+      area.lost
+      );
+
+
+      const risk =
+      riskLevel(area.lost);
+
+
+
+      return (
+
+      <tr
+      key={index}
+      className="border-b"
+      >
+
+
+      <td className="
+      p-4
+      font-black
+      ">
+
+      {area.area}
+
+      </td>
+
+
+      <td className="text-center">
+
+      {area.lost}
+
+      </td>
+
+
+      <td className="
+      text-center
+      text-emerald-600
+      font-bold
+      ">
+
+      {area.recovered}
+
+      </td>
+
+
+
+      <td className={`
+      text-center
+      font-black
+      ${pctColor(rate)}
+      `}>
+
+      {rate}%
+
+      </td>
+
+
+
+      <td className="text-center">
+
+
+      <span className={`
+      px-3 py-1
+      rounded-full
+      text-xs
+      font-black
+      ${riskColor(risk)}
+      `}>
+
+      {risk}
+
+      </span>
+
+
+      </td>
+
+
+
+      </tr>
+
+
+      )
+
+
+      })}
+
+
+
+      </tbody>
+
+
+      </table>
+
+
+      </div>
+
+
+
+
+
+
+
+      </div>
+
+
     </div>
-  );
-};
 
-// ─── Preview Shell ────────────────────────────────────────────────────────────
-const ReportsDesignPreview = () => {
-  // Hardcoded mock properties to test layout and interface nodes directly
-  const totalLost = 24;
-  const totalClaimed = 16;
-  const totalFound = 19;
-  const recoveryRate = pct(totalClaimed, totalLost);
 
-  const areaStats = [
-    { area: 'Canteen', lost: 18, recovered: 12 },
-    { area: 'Library', lost: 9, recovered: 5 },
-    { area: 'Parking Lot', lost: 4, recovered: 2 },
-    { area: 'Main Building', lost: 2, recovered: 1 },
-  ];
-  const maxAreaLost = 18;
+  </>
 
-  const catStats = [
-    { cat: 'Personal', count: 10, color: CAT_COLORS['Personal'] },
-    { cat: 'Electronics', count: 7, color: CAT_COLORS['Electronics'] },
-    { cat: 'Accessories', count: 5, color: CAT_COLORS['Accessories'] },
-    { cat: 'Cash/Cards', count: 2, color: CAT_COLORS['Cash/Cards'] },
-  ];
-  const totalCat = 24;
+);
 
-  const monthlyData = [
-    { month: 'Oct', lost: 4, found: 3 },
-    { month: 'Nov', lost: 6, found: 5 },
-    { month: 'Dec', lost: 2, found: 4 },
-    { month: 'Jan', lost: 8, found: 7 },
-    { month: 'Feb', lost: 5, found: 3 },
-    { month: 'Mar', lost: 9, found: 8 },
-  ];
-  const maxMonthly = 9;
-
-  const recoverySegs = [
-    { value: totalClaimed,             color: '#2D366D' },
-    { value: totalLost - totalClaimed, color: '#E2E8F0' },
-  ];
-  const catSegs = catStats.map(c => ({ value: c.count, color: c.color }));
-
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500 font-sans pb-10 max-w-[100%] mx-auto p-4 bg-slate-50/50 rounded-[40px]">
-      
-      {/* ─── Hero Module ─── */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#2D366D] via-[#354082] to-[#1E254E] rounded-[32px] p-8 md:p-10 text-white shadow-xl border border-slate-800/10">
-        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
-          <div>
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 mb-4">
-              <Sparkles size={12} className="text-orange-400 fill-orange-400" />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-300">Analytical Intel</span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black italic tracking-tight uppercase text-white drop-shadow-sm">
-              Statistical Reports
-            </h2>
-            <p className="text-white/70 text-xs font-medium mt-2 max-w-xl leading-relaxed uppercase tracking-wider">
-              Comprehensive turnover and spatial density diagnostics. Current campus accountability status is operating at <span className="text-white font-black underline underline-offset-4 decoration-orange-400 bg-white/5 px-1.5 py-0.5 rounded">{recoveryRate}% resolution effectiveness</span>.
-            </p>
-          </div>
-        </div>
-        <div className="absolute -top-32 -right-32 w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      </div>
-
-      {/* ─── Metric Dash-Cards Grid ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Recovery Rate" count={`${recoveryRate}%`} icon={Award} color="text-indigo-500" bgColor="bg-indigo-50" description={`${totalClaimed} of ${totalLost} cases resolved`} />
-        <StatCard label="Total Lost" count={totalLost} icon={AlertTriangle} color="text-rose-500" bgColor="bg-rose-50" description="Cumulative lost log items" />
-        <StatCard label="Total Found" count={totalFound} icon={CheckCircle2} color="text-emerald-500" bgColor="bg-emerald-50" description="Surrendered campus items" />
-        <StatCard label="Top Hotspot" count={areaStats[0].area} icon={MapPin} color="text-amber-500" bgColor="bg-amber-50" description={`${areaStats[0].lost} incidents registered`} />
-      </div>
-
-      {/* ─── Row 1: Recovery donut + Category donut ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Recovery rate donut */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col justify-between">
-          <div>
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] italic">Item Recovery Rate</h3>
-            <p className="text-[11px] text-slate-400 font-sans italic mt-0.5 mb-6">Percentage of lost items successfully returned to verified owners</p>
-          </div>
-          <div className="py-2">
-            <Donut segments={recoverySegs} label={`${recoveryRate}%`} sublabel="RECOVERED" />
-          </div>
-          <div className="flex justify-center gap-6 mt-6 border-t border-slate-50 pt-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#2D366D]" />
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Claimed ({totalClaimed})</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Unclaimed ({totalLost - totalClaimed})</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Category donut */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6">
-          <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] italic">Item Categories</h3>
-          <p className="text-[11px] text-slate-400 font-sans italic mt-0.5 mb-6">High-density classifications of logs recorded in the system</p>
-          <div className="flex flex-col sm:flex-row items-center gap-8">
-            <div className="flex-shrink-0">
-              <Donut segments={catSegs} r={55} strokeW={20} label={totalCat} sublabel="TOTAL LOGS" />
-            </div>
-            <div className="space-y-3.5 flex-1 w-full">
-              {catStats.map((c, i) => (
-                <div key={i} className="group">
-                  <div className="flex justify-between mb-1.5 items-center">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ background: c.color }} />
-                      <span className="text-[11px] font-bold text-slate-600 tracking-tight">{c.cat}</span>
-                    </div>
-                    <span className="text-[11px] font-black text-slate-800 font-mono bg-slate-50 px-1.5 py-0.5 rounded">{c.count}</span>
-                  </div>
-                  <HBar value={c.count} max={totalCat} color={c.color} delay={i * 80} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Row 2: Area hotspots + Monthly trend ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Hotspot bars */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6">
-          <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] italic">Area Hotspots</h3>
-          <p className="text-[11px] text-slate-400 font-sans italic mt-0.5 mb-6">Structural locations exhibiting elevated asset displacement</p>
-          <div className="space-y-4">
-            {areaStats.map((d, i) => {
-              const recPct = pct(d.recovered, d.lost);
-              return (
-                <div key={i}>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide truncate mr-4">{d.area}</span>
-                    <div className="flex items-center gap-2.5 flex-shrink-0">
-                      <span className="text-[10px] font-bold text-slate-400 font-mono">{d.lost} missing</span>
-                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${
-                        recPct >= 70 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                        recPct >= 50 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                        'bg-rose-50 text-rose-600 border-rose-100'
-                      }`}>
-                        {recPct}% resolved
-                      </span>
-                    </div>
-                  </div>
-                  <HBar value={d.recovered} max={maxAreaLost} color="#2D366D" delay={i * 70} />
-                </div>
-              );
-            })}
-            <div className="flex gap-4 pt-2 border-t border-slate-50">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-sm bg-[#2D366D]" />
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Turned Over</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-sm bg-slate-100 border border-slate-200" />
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Unresolved Status</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Monthly trend */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col justify-between">
-          <div>
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] italic">Monthly Volatility Trend</h3>
-            <p className="text-[11px] text-slate-400 font-sans italic mt-0.5 mb-4">Comparative timeline tracking lost versus found operations</p>
-          </div>
-          <VBarGroup data={monthlyData} max={maxMonthly} />
-          <div className="flex gap-4 mt-4 border-t border-slate-100 pt-4">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-sm bg-[#2D366D]" />
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Found Items</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-sm bg-[#BFCBF7]" />
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Reported Lost</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Hotspot detail table ─── */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-slate-100 bg-slate-50/40">
-          <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] italic">Hotspot Matrix Breakdown</h3>
-          <p className="text-[11px] text-slate-400 font-sans italic mt-0.5">Granular regional risk indexing across institutional parameters</p>
-        </div>
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-left text-xs min-w-[650px] table-fixed border-collapse">
-            <thead>
-              <tr className="bg-slate-50/70 text-slate-400 font-black uppercase border-b border-slate-100 text-[9px] tracking-[0.15em]">
-                <th className="p-4 pl-6 w-[28%]">Campus Area Sector</th>
-                <th className="p-4 text-center w-[12%]">Lost Logged</th>
-                <th className="p-4 text-center w-[15%]">Recovered Cases</th>
-                <th className="p-4 text-center w-[15%]">Outstanding</th>
-                <th className="p-4 text-center w-[15%]">Success Rate</th>
-                <th className="p-4 text-center w-[15%]">Risk Index</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {areaStats.map((d, i) => {
-                const p = pct(d.recovered, d.lost);
-                const risk = riskLevel(d.lost);
-                return (
-                  <tr key={i} className="hover:bg-blue-50/30 transition-all duration-200 group h-[64px]">
-                    <td className="p-4 pl-6 align-middle truncate">
-                      <p className="font-black text-slate-800 capitalize tracking-tight text-[13px] group-hover:text-[#2D366D] transition-colors">{d.area}</p>
-                    </td>
-                    <td className="p-4 text-center align-middle font-bold text-slate-500 font-mono">{d.lost}</td>
-                    <td className="p-4 text-center align-middle font-black text-emerald-600 font-mono">{d.recovered}</td>
-                    <td className="p-4 text-center align-middle font-black text-rose-400 font-mono">{d.lost - d.recovered}</td>
-                    <td className={`p-4 text-center align-middle font-black text-[13px] font-mono ${pctColor(p)}`}>{p}%</td>
-                    <td className="p-4 text-center align-middle">
-                      <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${riskColor(risk)}`}>
-                        {risk}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default ReportsDesignPreview;
+}
