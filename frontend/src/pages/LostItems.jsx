@@ -128,7 +128,7 @@ const ItemModal = ({ item, onSave, onClose }) => {
       }}
     >
       <div className="w-full max-w-4xl max-h-[92vh] overflow-hidden rounded-md bg-white shadow-2xl">
-        <div className="flex items-start justify-between bg-[#1478a7] px-6 py-3 text-white">
+        <div className="flex items-start justify-between bg-gradient-to-r from-[#0B648D] to-[#155F87] px-6 py-3 text-white">
           <div>
             <h3 className="text-2xl font-bold">
               {isEdit ? "Edit Lost Item" : "Add Lost Item"}
@@ -339,6 +339,8 @@ const LostItems = ({ currentFilter,role }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [activeConfirmation, setActiveConfirmation] = useState(null);
   const [notificationMessage, setNotificationMessage] = useState(null);
+
+  const isFetchingRef = useRef(false);
   
   const tableContainerRef = useRef(null);
 
@@ -393,6 +395,47 @@ const LostItems = ({ currentFilter,role }) => {
       if (!path) return null;
       return path.startsWith('http') ? path : `${API_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
     };
+
+    const fetchData = async ({ showLoading = false } = {}) => {
+        if (isFetchingRef.current) return;
+    
+        try {
+          isFetchingRef.current = true;
+          if (showLoading) setLoading(true);
+          const data = await getItems();
+          const actualData = Array.isArray(data) ? data : (data.results || []);
+          const pendingLostItems = actualData.filter((item) => {
+            return item.status === 'Pending' && item.type === 'Lost';
+          });
+    
+          const nextSnapshot = JSON.stringify(
+            pendingLostItems.map((item) => ({
+              id: item.id,
+              title: item.title,
+              category: item.category,
+              poster_name: item.poster_name,
+              location: item.location,
+              created_date: item.created_date,
+              created_time: item.created_time,
+              status: item.status,
+              description: item.description,
+              image: item.image,
+              images: item.images,
+              file: item.file,
+            }))
+          );
+    
+          if (nextSnapshot !== lastItemsSnapshotRef.current) {
+            lastItemsSnapshotRef.current = nextSnapshot;
+            setItems(pendingLostItems);
+          }
+        } catch (error) {
+          console.error("Error fetching items:", error);
+        } finally {
+          if (showLoading) setLoading(false);
+          isFetchingRef.current = false;
+        }
+      };
 
 
   async function handleView(item) {
@@ -500,6 +543,31 @@ const LostItems = ({ currentFilter,role }) => {
     }
   }
 
+  const handleDelete = async (id) => {
+      try {
+        await editLostItem(id, { status: 'Archived' });
+        setNotificationMessage("Item declined.");
+        setSelectedItem(null);
+        fetchData({ showLoading: false });
+      } catch (error) {
+        console.error("Error deleting item:", error);
+      }
+    };
+
+  const handleUpdateStatus = async (item, status = 'Approved') => {
+    try {
+      await editLostItem(item.id, { status: status });
+
+      setNotificationMessage("Item approved.");
+      setSelectedItem(null);
+      await fetchData({ showLoading: false });
+    } catch (error) {
+      console.error(`Error updating status to ${status}:`, error.response?.data || error.message);
+      const msg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+      setNotificationMessage(`Update failed: ${msg}`);
+    }
+  };
+
   async function handleClaimItem(item) {
     if (item.status === 'Claimed') {
       window.alert('This item is already claimed.');
@@ -588,7 +656,7 @@ const visiblePages = getVisiblePages();
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-10 rounded-full" />
               <div>
-                <h3 className="text-[22px] sm:text-2xl font-black uppercase tracking-[0.18em] text-[#071E3D]">
+                <h3 className="text-[22px] sm:text-xl font-black uppercase tracking-[0.18em] text-[#071E3D]">
                   Lost Items
                 </h3>
 
@@ -625,93 +693,63 @@ const visiblePages = getVisiblePages();
 
       {/* Content */}
       <div ref={tableContainerRef} className="max-h-[calc(100vh-260px)] overflow-auto bg-white">
-          <table className="w-full min-w-[1000px] table-fixed border-separate border-spacing-0">
-            <thead className="sticky top-0 z-10">
-              <tr>
-                <th className="w-[20%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
-                  Item Ticket
-                </th>
-                <th className="w-[13%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
-                  Item Name
-                </th>
-                <th className="w-[15%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
-                  Category
-                </th>
-                <th className="w-[16%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
-                  Reported By
-                </th>
-                <th className="w-[17%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
-                  Area
-                </th>
-                <th className="w-[16%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
-                  Estimation Date
-                </th>
-                <th className="w-[15%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
-                  Status
-                </th>
-                <th className="w-[18%] border-b border-[#095A74] bg-[#0B6B8A] p-4 text-center text-[15px] font-black uppercase tracking-wide text-white">
-                  Action
-                </th>
-              </tr>
-            </thead>
+        <table className="w-full min-w-[1000px] table-fixed border-collapse">
+          <thead className="sticky top-0 z-10">
+            <tr>
+              <th className="w-[12%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Ticket</th>
+              <th className="w-[15%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Item Name</th>
+              <th className="w-[12%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Category</th>
+              <th className="w-[16%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Reported By</th>
+              <th className="w-[16%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Area</th>
+              <th className="w-[12%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Date</th>
+              <th className="w-[10%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Status</th>
+              <th className="w-[10%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Action</th>
+          </tr>
+       </thead>
 
             <tbody className="bg-white">
               {paginatedItems.length > 0 ? (
                 paginatedItems.map((item, index) => (
-                  <tr
-                    key={item.id}
-                    className={`h-[70px] transition-colors ${
-                      index % 2 === 0 ? "bg-white" : "bg-[#F6FAFF]"
-                    } hover:bg-[#EAF4FF]`}
-                  >
-                    <td className="border-b border-[#D8E2EF] p-2 text-center align-middle font-bold text-[#071E3D]">
-                      {item.ticket_code}
-                    </td>
+                  <tr key={item.id} className={`h-[70px] transition-colors ${index % 2 === 0 ? "bg-white" : "bg-[#F6FAFF]"} hover:bg-[#EAF4FF]`}>
+                    <td className="border border-gray-300 p-2 text-center align-middle font-bold text-[#0B6B8A] text-sm">{item.ticket_code}</td>
 
-                    <td className="truncate border-b border-[#D8E2EF] p-4 text-center align-middle font-bold text-[#071E3D]">
-                      {toTitleCase(item.title)}
+                    <td className="border border-gray-300 p-4 text-center align-middle text-slate-700 text-[14px]"> {toTitleCase(item.title)}</td>
+                    <td className="border border-gray-300 p-4 text-center align-middle">
+                      <div className="flex items-center justify-center">
+                        <span className="inline-flex items-center justify-center px-3 py-1 text-[14px] uppercase text-[#2D366D]">
+                          {toTitleCase(item.category) || '-'}
+                        </span>
+                      </div>
                     </td>
-
-                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle text-[#071E3D]">
-                      <span className="inline-flex items-center justify-center rounded-full bg-[#EEF4FA] px-3 py-1 text-[13px] font-bold uppercase tracking-wide text-[#2D366D]">
-                        {toTitleCase(item.category) || '-'}
-                      </span>
-                    </td>
-
-                    <td className="truncate border-b border-[#D8E2EF] p-4 text-center align-middle text-[#52627A]">
-                      {toTitleCase(item.poster_name) || '-'}
-                    </td>
-
-                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle text-[#071E3D]">
-                      <div className="flex items-center justify-center gap-1.5 truncate">
+                    <td className="border border-gray-300 p-4 text-center align-middle text-slate-600 text-[14px]">{toTitleCase(item.poster_name) || '-'}</td>
+                    <td className="border border-gray-300 p-4 text-center align-middle text-slate-700 text-[14px]">
+                      <div className="flex items-center justify-center whitespace-normal leading-tight">
                         <span>{toTitleCase(item.location) || '-'}</span>
                       </div>
                     </td>
-
-                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
-                      <span className="block text-[15px] font-bold text-[#071E3D]">
+                    <td className="border border-gray-300 p-4 text-center align-middle text-slate-700 text-[14px]">
+                      <span className="block">
                         {item.created_date || '-'}
                       </span>
-                      <span className="block text-[15px] font-black uppercase tracking-wide text-[#7B8AA6]">
+                      <span className="block">
                         {item.created_time || '-'}
                       </span>
                     </td>
-
-                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
-                      <span
-                        className={`rounded-full px-3 py-1 text-[13px] font-black uppercase tracking-wider ${statusColor(item.status)}`}
-                      >
-                        {item.status}
-                      </span>
+                    <td className="border border-gray-300 p-4 align-middle">
+                      <div className="flex items-center justify-center">
+                        <span className={`rounded px-3 py-1 text-[11px] font-black uppercase ${statusColor(item.status)}`}>
+                          {item.status}
+                        </span>
+                      </div>
                     </td>
 
-                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
+                    <td className="border border-gray-300 p-2 text-center align-middle">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => setSelectedItem(item)}
-                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0B6B8A] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-[#095A74]"
+                          className="inline-flex items-center justify-center gap-2 rounded bg-[#0B6B8A] px-3 py-1.5 text-[14px] font-semibold text-white transition hover:bg-[#095A74]"
                         >
-                          <Eye size={14} strokeWidth={3} />
+                          <Eye size={12} strokeWidth={4} />
                           Review
                         </button>
                       </div>
@@ -790,7 +828,7 @@ const visiblePages = getVisiblePages();
           }}
         >
           <div className="w-full max-w-4xl max-h-[92vh] overflow-hidden rounded-md bg-white shadow-2xl">
-            <div className="flex items-start justify-between bg-[#1478a7] px-6 py-3 text-white">
+            <div className="flex items-start justify-between bg-gradient-to-r from-[#0B648D] to-[#155F87] px-6 py-3 text-white">
               <div>
                 <h3 className="text-2xl font-bold">Item Review</h3>
                 <p className="mt-1 text-sm text-white/90">

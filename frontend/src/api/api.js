@@ -292,11 +292,22 @@ export const getPointsTracking = async () => {
 };
 
 export const getLeaderboardSettings = async () => {
-  const res = await api.get("gamification/settings/");
+  const res = await api.get("gamification/leaderboard-settings/");
   return res.data;
 };
 
 export const updateLeaderboardSettings = async (data) => {
-  const res = await api.put("gamification/settings/update/", data);
+  const res = await api.put("gamification/leaderboard-settings/update/", data);
   return res.data;
+};
+
+
+export const getLeaderboardHistory = async (params = {}) => {
+  const response = await api.get("gamification/leaderboard-history/", { params });
+  return response.data;
+};
+
+export const archiveLeaderboardHistory = async (payload) => {
+  const response = await api.post("gamification/leaderboard-history/archive/", payload);
+  return response.data;
 };

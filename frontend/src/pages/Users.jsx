@@ -27,18 +27,18 @@ const EMPTY = {
   first_name: '', 
   last_name: '', 
   email: '', 
+  contact_number: '',
   role: 'moderator', 
-  is_active: null, 
+  is_active: true, 
   created_at: '', 
   updated_at: '', 
   is_archived: false, 
 };
 
-// ─── User Modal (Add / Edit / View) ──────────────────────────────────────────
-const UserModal = ({ user, onSave, onClose, mode = 'edit' }) => {
+// ─── Combined User Modal (Add / View & Edit) ─────────────────────────────────
+const UserModal = ({ user, onSave, onClose }) => {
   const [form, setForm] = useState(user || EMPTY);
-  const isEdit = !!user && mode !== 'view';
-  const isView = mode === 'view';
+  const isEditMode = !!user; 
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -49,145 +49,122 @@ const UserModal = ({ user, onSave, onClose, mode = 'edit' }) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-xl rounded-md bg-white shadow-2xl overflow-hidden">
-        <div className="flex items-start justify-between bg-[#1478a7] px-6 py-4 text-white">
+      <div className="w-full max-w-2xl rounded-md bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="flex items-start justify-between bg-gradient-to-r from-[#0B648D] to-[#155F87] px-6 py-4 text-white shrink-0">
           <div>
             <h3 className="text-2xl font-bold">
-              {isView ? 'View User' : isEdit ? 'Edit User' : 'Add User'}
+              {isEditMode ? 'View User Profile' : 'Add New User'}
             </h3>
             <p className="mt-1 text-sm text-white/90">
-              {isView
-                ? 'Review user account details'
-                : isEdit
-                  ? 'Update user account details'
-                  : 'Submit details for a new user'}
+              {isEditMode ? 'Review and update user account details directly' : 'Submit details for a new user account'}
             </p>
           </div>
-
-          <button
-            onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 transition flex items-center justify-center"
-          >
-            ✕
-          </button>
+          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 transition flex items-center justify-center">✕</button>
         </div>
 
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            if (!isView) await onSave(form);
+            await onSave(form);
           }}
-          className="px-5 py-4 sm:px-8 sm:py-6 space-y-4"
+          className="p-6 overflow-y-auto space-y-6 flex-1"
         >
-    <div className="mx-auto max-w-2xl space-y-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <div>
-        <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
-          First Name *
-        </label>
-        <input
-          className="h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1478a7] disabled:bg-slate-100"
-          value={form.first_name || ''}
-          onChange={(e) => set('first_name', e.target.value)}
-          placeholder="First name"
-          disabled={isView}
-        />
-      </div>
+          {/* Form Fields */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-bold uppercase text-slate-500">First Name *</label>
+                <input
+                  className="h-12 w-full rounded-xl border border-slate-300 px-4 text-base text-slate-700 outline-none focus:border-[#1478a7]"
+                  value={form.first_name || ''}
+                  onChange={(e) => set('first_name', e.target.value)}
+                  placeholder="First name"
+                  required
+                />
+              </div>
 
-      <div>
-        <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
-          Last Name *
-        </label>
-        <input
-          className="h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1478a7] disabled:bg-slate-100"
-          value={form.last_name || ''}
-          onChange={(e) => set('last_name', e.target.value)}
-          placeholder="Last name"
-          disabled={isView}
-        />
-      </div>
-    </div>
-
-    <div>
-      <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
-        Email Address *
-      </label>
-      <input
-        className="h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1478a7] disabled:bg-slate-100"
-        type="email"
-        value={form.email || ''}
-        onChange={(e) => set('email', e.target.value)}
-        placeholder="email@slc-sflu.edu.ph"
-        disabled={isView}
-      />
-    </div>
-
-    {!isEdit && !isView && (
-      <div>
-        <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
-          Password
-        </label>
-        <input
-          className="h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none placeholder:text-slate-400 disabled:bg-slate-100 disabled:text-slate-400"
-          type="password"
-          value=""
-          placeholder="Password will be auto-generated"
-          disabled
-          readOnly
-        />
-      </div>
-    )}
-
-    <div>
-      <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
-        Role *
-      </label>
-      <select
-        className="h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none focus:border-[#1478a7] disabled:bg-slate-100"
-        value={form.role || 'moderator'}
-        onChange={(e) => set('role', e.target.value)}
-        disabled={isView}
-      >
-        <option value="admin">Admin</option>
-        <option value="moderator">Moderator</option>
-      </select>
-    </div>
-
-    {isEdit && (
-      <div>
-        <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
-          Status *
-        </label>
-        <select
-          className="h-14 w-full rounded-xl border border-slate-300 px-4 text-lg text-slate-700 outline-none focus:border-[#1478a7] disabled:bg-slate-100"
-          value={form.is_active ? 'Active' : 'Inactive'}
-          onChange={(e) => set('is_active', e.target.value === 'Active')}
-          disabled={isView}
-        >
-          <option>Active</option>
-          <option>Inactive</option>
-        </select>
-      </div>
-    )}
-
-            <div className="grid grid-cols-1 gap-4 pt-1 sm:grid-cols-2">
-              {!isView && (
-                <button
-                  type="submit"
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
-                >
-                  {isEdit ? 'Save Changes' : 'Add User'}
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 py-3 rounded-xl bg-[#E3E8F0] text-[#64748B] text-base font-bold uppercase tracking-wide transition duration-200 hover:bg-[#D5DDE8]"
-                >
-                {isView ? 'Close' : 'Cancel'}
-              </button>
+              <div>
+                <label className="mb-1 block text-xs font-bold uppercase text-slate-500">Last Name *</label>
+                <input
+                  className="h-12 w-full rounded-xl border border-slate-300 px-4 text-base text-slate-700 outline-none focus:border-[#1478a7]"
+                  value={form.last_name || ''}
+                  onChange={(e) => set('last_name', e.target.value)}
+                  placeholder="Last name"
+                  required
+                />
+              </div>
             </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-bold uppercase text-slate-500">Email Address *</label>
+                <input
+                  className="h-12 w-full rounded-xl border border-slate-300 px-4 text-base text-slate-700 outline-none focus:border-[#1478a7]"
+                  type="email"
+                  value={form.email || ''}
+                  onChange={(e) => set('email', e.target.value)}
+                  placeholder="email@slc-sflu.edu.ph"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold uppercase text-slate-500">Contact Number *</label>
+                <input
+                  className="h-12 w-full rounded-xl border border-slate-300 px-4 text-base text-slate-700 outline-none focus:border-[#1478a7]"
+                  type="text"
+                  value={form.contact_number || ''}
+                  onChange={(e) => set('contact_number', e.target.value)}
+                  placeholder="09123456789"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-bold uppercase text-slate-500">Role *</label>
+                <select
+                  className="h-12 w-full rounded-xl border border-slate-300 px-4 text-base text-slate-700 outline-none focus:border-[#1478a7]"
+                  value={form.role || 'moderator'}
+                  onChange={(e) => set('role', e.target.value)}
+                >
+                  <option value="admin">Admin</option>
+                  <option value="moderator">Moderator</option>
+                </select>
+              </div>
+
+              {isEditMode && (
+                <div>
+                  <label className="mb-1 block text-xs font-bold uppercase text-slate-500">Status *</label>
+                  <select
+                    className="h-12 w-full rounded-xl border border-slate-300 px-4 text-base text-slate-700 outline-none focus:border-[#1478a7]"
+                    value={form.is_active ? 'Active' : 'Inactive'}
+                    onChange={(e) => set('is_active', e.target.value === 'Active')}
+                  >
+                    <option>Active</option>
+                    <option>Inactive</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2 shrink-0">
+            <button
+              type="submit"
+              className="h-12 rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] text-white text-sm font-black uppercase tracking-wide shadow-md transition hover:from-[#44509B]"
+            >
+              {isEditMode ? 'Save Changes' : 'Add User'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-12 rounded-xl text-sm font-black uppercase tracking-wide transition bg-slate-100 text-slate-500 hover:bg-slate-200"
+            >
+              Cancel
+            </button>
           </div>
         </form>
       </div>
@@ -195,16 +172,38 @@ const UserModal = ({ user, onSave, onClose, mode = 'edit' }) => {
   );
 };
 
-// ─── Archive Confirmation Modal ──────────────────────────────────────────────
+// ─── Archive Confirmation Modal (Patterned after Logout Design) ─────────────
 const ConfirmModal = ({ message, onConfirm, onClose }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-    <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-8 text-center border border-slate-100">
-      <div className="text-3xl mb-3">⚠️</div>
-      <h3 className="font-black text-slate-800 text-base uppercase italic mb-2">Are you sure?</h3>
-      <p className="text-slate-400 text-xs font-sans mb-6">{message}</p>
-      <div className="flex gap-3">
-        <button onClick={onConfirm} className="flex-1 bg-red-500 text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">Confirm</button>
-        <button onClick={onClose}   className="flex-1 bg-slate-100 text-slate-500 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all">Cancel</button>
+  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 backdrop-blur-md p-6">
+   <div className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-[0_30px_80px_rgba(0,0,0,.25)]">  
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#FDF2F2] text-[#DE350B]">
+        <span className="text-2xl">⚠️</span>
+      </div>
+
+      <h3 className="mt-6 text-2xl font-bold text-[#154B70]">
+        Confirm Archive
+      </h3>
+
+      <p className="mt-3 text-sm leading-relaxed text-slate-500">
+        {message}
+      </p>
+
+      <div className="mt-7 space-y-3">
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="w-full rounded-xl bg-[#DE350B] py-3 text-base font-bold uppercase text-white transition hover:bg-[#bb2d09] active:scale-[.98]"
+        >
+          Confirm
+        </button>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full rounded-xl border border-[#0B648D] py-3 text-base font-semibold uppercase text-[#0B648D] transition hover:bg-blue-50 active:scale-[.98]"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   </div>
@@ -214,20 +213,25 @@ const ConfirmModal = ({ message, onConfirm, onClose }) => (
 const Users = () => {
   const [search, setSearch] = useState('');
   const [addOpen, setAddOpen] = useState(false);
-  const [editUser, setEditUser] = useState(null);
+  const [activeUserModal, setActiveUserModal] = useState(null); 
   const [archiveUser, setArchiveUser] = useState(null);
-  const [viewUser, setViewUser] = useState(null);
   const [user, setUser] = useState([]);
+
+  // Pagination states (set to 10 items per page like found items)
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     fetchUsers();
-
     const interval = setInterval(() => {
       fetchUsers();
-    }, 5000); // Polling safely every 5 seconds
-
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   async function fetchUsers() {
     try {
@@ -238,30 +242,29 @@ const Users = () => {
     }
   }
 
-  async function handleEdit(user) {
+  async function handleOpenViewEdit(userItem) {
     try {
-      const data = await getUserById(user.id);
-      setEditUser(data);
+      const data = await getUserById(userItem.id);
+      setActiveUserModal(data);
     } catch (error) {
-      console.error('Error fetching user details:', error.response?.data || error);
-      setEditUser(user);
+      setActiveUserModal(userItem);
     }
   }
 
   async function handleSaveEdit(updatedUser) {
     try {
-      await updateUserById(editUser.id, {
+      await updateUserById(activeUserModal.id, {
         first_name: updatedUser.first_name,
         last_name: updatedUser.last_name,
         email: updatedUser.email,
+        contact_number: updatedUser.contact_number,
         role: updatedUser.role,
         is_active: updatedUser.is_active,
       });
       await fetchUsers();
       window.alert('User updated successfully!');
-      setEditUser(null);
+      setActiveUserModal(null);
     } catch (error) {
-      console.error('Error updating user:', error.response?.data || error);
       alert('Failed to update user.');
     }
   }
@@ -272,63 +275,72 @@ const Users = () => {
         first_name: newUser.first_name,
         last_name: newUser.last_name,
         email: newUser.email,
+        contact_number: newUser.contact_number,
         role: newUser.role || 'moderator',
         is_active: true,
       });
-
-      const refreshedUsers = await getUsers();
-      setUser(refreshedUsers);
-
+      await fetchUsers();
       setAddOpen(false);
       window.alert('User added successfully!');
     } catch (error) {
-      console.error('Error adding user:', error.response?.data || error);
+      console.error('Error adding user:', error);
     }
   }
 
-  async function handleView(user) {
+  async function handleArchiveUser(userItem) {
     try {
-      const data = await getUserById(user.id);
-      setViewUser(data);
-    } catch (error) {
-      console.error('Error fetching user details:', error.response?.data || error);
-      setViewUser(user);
-    }
-  }
-
-  async function handleArchiveUser(user) {
-    try {
-      await updateUserById(user.id, {
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        role: user.role,
-        is_active: user.is_active,
+      await updateUserById(userItem.id, {
+        first_name: userItem.first_name,
+        last_name: userItem.last_name,
+        email: userItem.email,
+        contact_number: userItem.contact_number,
+        role: userItem.role,
+        is_active: userItem.is_active,
         is_archived: true,
       });
-
       await fetchUsers();
       setArchiveUser(null);
       window.alert('User archived successfully!');
     } catch (error) {
-      console.error('Error archiving user:', error.response?.data || error);
-      alert(JSON.stringify(error.response?.data || 'Failed to archive user.'));
+      alert('Failed to archive user.');
     }
   }
 
+  // Filter computation
   const filtered = user.filter((u) => {
     const searchText = search.toLowerCase();
     const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email;
-
     return (
       u.is_archived === false && (
         fullName.toLowerCase().includes(searchText) ||
         String(u.id).includes(searchText) ||
         u.email?.toLowerCase().includes(searchText) ||
+        u.contact_number?.toLowerCase().includes(searchText) ||
         u.role?.toLowerCase().includes(searchText)
       )
     );
-  });
+  }).sort((a, b) => b.id - a.id);
+
+  // Pagination calculations patterned exactly after FoundItems
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const getVisiblePages = () => {
+    const maxVisiblePages = 5;
+    if (totalPages <= maxVisiblePages) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+    let startPage = currentPage < maxVisiblePages ? 1 : currentPage - 3;
+    let endPage = startPage + maxVisiblePages - 1;
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = totalPages - maxVisiblePages + 1;
+    }
+    return Array.from({ length: endPage - startPage + 1 }, (_, index) => startPage + index);
+  };
+
+  const visiblePages = getVisiblePages();
 
   function toTitleCase(text) {
     if (!text) return "";
@@ -341,180 +353,199 @@ const Users = () => {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(109vh-260px)]">
-      
-      {/* Control Header */}
-      {/* Header */}
-  <div className="bg-white px-6 sm:px-8 py-6 border-b border-[#D8E2EF] shrink-0">
-    <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
+    <div className="bg-white rounded-[18px] border border-[#D8E2EF] shadow-[0_8px_24px_rgba(45,54,109,0.08)] overflow-hidden flex flex-col h-[calc(100vh-130px)]">
+        
+        {/* Header */}
+        <div className="bg-white px-6 sm:px-8 py-6 border-b border-[#D8E2EF] shrink-0">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5 shrink-0">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-10 rounded-full" />
+                <div>
+                  <h3 className="text-[22px] sm:text-xl font-black uppercase tracking-[0.18em] text-[#071E3D]">
+                    Registered Users
+                  </h3>
+                  <p className="text-md sm:text-base text-[#7B8AA6] italic mt-1">
+                    Manage all registered system user accounts
+                  </p>
+                </div>
+              </div>
+            </div>
 
-      <div className="flex items-center gap-3">
-        <div className="w-1.5 h-10 rounded-full " />
-
-        <div>
-          <h3 className="text-[22px] sm:text-2xl font-black uppercase tracking-[0.18em] text-[#071E3D]">
-            Registered Users
-          </h3>
-
-          <p className="text-base text-[#7B8AA6] italic mt-1">
-            Manage all registered system user accounts
-          </p>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
+              <div className="relative w-full sm:w-[330px]">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0B6B8A] text-lg">🔍</span>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search users..."
+                  className="w-full pl-10 pr-4 py-3 border border-[#CBD8E8] rounded-full text-lg outline-none bg-white text-[#071E3D] placeholder:text-[#8A98B3] focus:ring-2 focus:ring-[#0B6B8A]/20 focus:border-[#0B6B8A] transition-all"
+                />
+              </div>
+              <button
+                onClick={() => setAddOpen(true)}
+                className="px-6 py-3 rounded-full bg-[#2D366D] text-white font-black uppercase tracking-[0.12em] text-m shadow-[0_6px_14px_rgba(45,54,109,0.25)] hover:bg-[#24305C] transition-all whitespace-nowrap"
+              >
+                📋 Add User
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
-
-        <div className="relative w-full sm:w-[330px]">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0B6B8A] text-lg">
-            🔍
-          </span>
-
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search users..."
-            className="w-full pl-10 pr-4 py-3 border border-[#CBD8E8] rounded-full text-lg outline-none bg-white text-[#071E3D] placeholder:text-[#8A98B3] focus:ring-2 focus:ring-[#0B6B8A]/20 focus:border-[#0B6B8A] transition-all"
-          />
-        </div>
-
-        <button
-          onClick={() => setAddOpen(true)}
-          className="px-14 py-3 rounded-full bg-[#2D366D] text-white font-black uppercase tracking-[0.12em] text-m shadow-[0_6px_14px_rgba(45,54,109,0.25)] hover:bg-[#24305C] transition-all whitespace-nowrap"
-        >
-          📋 Add User
-        </button>
-
-      </div>
-
-    </div>
-  </div>
-
-  {/* TABLE WRAPPER START */}
-  <div className="flex-1 overflow-y-auto bg-white">
-  <table className="w-full min-w-[1000px] table-fixed border-separate border-spacing-0">
-  <thead className="sticky top-0 z-10">
-    <tr>
-      <th className="bg-[#0B6B8A] p-2 text-white font-black uppercase text-[15px] text-center">ID</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[15px] text-center">Name</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[15px] text-center">Email</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[15px] text-center">Role</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[15px] text-center">Status</th>
-      <th className="bg-[#0B6B8A] p-4 text-white font-black uppercase text-[15px] text-center">Actions</th>
-    </tr>
-  </thead>
-          
-          <tbody className="divide-y divide-slate-100 bg-white">
-            {filtered.length > 0 ? (
-              filtered.map(u => (
-                <tr key={u.id} className="hover:bg-blue-50/40 transition-colors h-[80px]">
-                  
-                  <td className="bg-white p-5 text-center align-middle">
-                    <span className="font-mono text-[11px] bg-slate-100 px-2.5 py-1 rounded border border-slate-200 text-slate-500 font-bold inline-block"> #U-{String(u.id).padStart(3, '0')}
-                    </span>
-                  </td>
-                  
-                  <td className="bg-white p-5 text-slate-500 text-center align-middle px-4 truncate">
-                    {toTitleCase(u.first_name)} {toTitleCase(u.last_name)}
-                  </td>
-                  
-                  <td className="bg-white p-5 text-slate-500 text-center align-middle px-4 truncate">
-                    {toTitleCase(u.email)}
-                  </td>
-                  
-                  <td className="bg-white p-5 text-center align-middle">
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${roleColor(u.role)}`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  
-                  <td className="bg-white p-5 text-center align-middle">
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${statusColor(u)}`}>
-                      {statusText(u)}
-                    </span>
-                  </td>
-                  
-                  <td className="bg-white p-5 text-center align-middle">
-                    <div className="flex justify-center items-center gap-2">
-                      <button
-                        onClick={() => handleView(u)}
-                        className="bg-[#0B6B8A] text-white hover:bg-[#095A74] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
-                      >
-                        View
-                      </button>
-                      <button 
-                        onClick={() => handleEdit(u)} 
-                        className="bg-white border border-[#C79A2B] text-[#9A741C] hover:bg-[#FFF8E8] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => setArchiveUser(u)}
-                        className="bg-white border border-red-300 text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+        {/* Content Table Wrapper */}
+        <div className="flex-1 overflow-y-auto bg-white">
+          <table className="w-full min-w-[1000px] table-fixed border-collapse">
+            <thead className="sticky top-0 z-10">
+              <tr>
+                <th className="bg-[#0B6B8A] p-3 w-[15%] border border-gray-300 text-white font-bold text-center uppercase w-[4%]">ID</th>
+                <th className="bg-[#0B6B8A] p-3 w-[15%] border border-gray-300 text-white font-bold text-center uppercase w-[18%]">Name</th>
+                <th className="bg-[#0B6B8A] p-3 w-[15%] border border-gray-300 text-white font-bold text-centeruppercase w-[20%]">Email</th>
+                <th className="bg-[#0B6B8A] p-3 w-[15%] border border-gray-300 text-white font-bold text-center uppercase w-[18%]">Contact No.</th>
+                <th className="bg-[#0B6B8A] p-3 w-[15%] border border-gray-300 text-white font-bold text-center uppercase w-[12%]">Role</th>
+                <th className="bg-[#0B6B8A] p-3 w-[15%] border border-gray-300 text-white font-bold text-center uppercase w-[8%]">Status</th>
+                <th className="bg-[#0B6B8A] p-3 w-[15%] border border-gray-300 text-white font-bold text-center uppercase w-[20%]">Action</th>
+              </tr>
+            </thead>
             
-                      >
-                        Archive
-                      </button>
+            <tbody className="bg-white">
+              {paginatedItems.length > 0 ? (
+                paginatedItems.map((u, index) => {
+                  return (
+                    <tr key={u.id} className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-blue-50 transition`}>
+                      <td className="border border-gray-300 p-4 text-center font-semibold text-slate-700">
+                        <span className="font-mono text-[11px] bg-slate-100 px-2.5 py-1 rounded border border-slate-200 text-slate-500 font-bold inline-block"> 
+                          #U-{String(u.id).padStart(3, '0')}
+                        </span>
+                      </td>
+                      
+                      <td className="border border-gray-300 p-4 text-center font-semibold text-slate-700">
+                        {toTitleCase(u.first_name)} {toTitleCase(u.last_name)}
+                      </td>
+                      
+                      <td className="border border-gray-300 p-4 text-center text-slate-600">
+                        {u.email}
+                      </td>
+
+                     <td className="border border-gray-300 p-4 text-center text-slate-600">
+                        {u.contact_number || '-'}
+                      </td>
+                      
+                      <td className="border border-gray-300 p-4 text-center">
+                       <span className={`px-3 py-1 rounded text-[12px] font-bold uppercase ${roleColor(u.role)}`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      
+                      <td className="border border-gray-300 p-4 text-center">
+                        <span className={`px-3 py-1 rounded text-[12px] font-bold uppercase ${statusColor(u)}`}>
+                          {statusText(u)}
+                        </span>
+                      </td>
+                      
+                      <td className="border border-gray-300 p-4 text-center">
+                        <div className="flex justify-center items-center gap-2">
+                          <button
+                            onClick={() => handleOpenViewEdit(u)}
+                            className="bg-[#0B6C9C] text-white px-4 py-2 rounded hover:bg-[#09597F] transition text-[13px] font-bold"
+                          >
+                            View User
+                          </button>
+                          <button
+                            onClick={() => setArchiveUser(u)}
+                            className="bg-[#2D366D] text-white px-4 py-2 rounded hover:opacity-90 transition text-[13px] font-bold"
+                          >
+                            Archive
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} className="bg-white text-center py-32">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="w-16 h-16 rounded-full bg-[#EEF4FA] flex items-center justify-center text-3xl">👥</div>
+                      <span className="text-4xl opacity-20 font-black tracking-tighter text-[#071E3D]">EMPTY</span>
+                      <p className="text-xs font-sans tracking-[0.2em] uppercase font-bold text-[#7B8AA6]">No active users discovered</p>
                     </div>
                   </td>
-
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7} className="bg-white text-center py-40">
-                  <div className="flex flex-col items-center justify-center text-slate-300 gap-2">
-                    <span className="text-6xl opacity-10 font-black tracking-tighter">
-                      EMPTY
-                    </span>
-                    <p className="text-sm font-sans tracking-[0.2em] uppercase font-bold text-slate-400">
-                      No active users discovered
-                    </p>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Block matching FoundItems layout */}
+        {filtered.length > 0 && (
+          <div className="flex flex-col gap-4 border-t border-[#D8E2EF] bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-bold text-[#7B8AA6]">
+              Showing {startIndex + 1}-{Math.min(startIndex + ITEMS_PER_PAGE, filtered.length)} of {filtered.length}
+            </p>
+
+            <div className="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                disabled={currentPage === 1}
+                className="h-10 rounded-lg border border-[#D8E2EF] px-4 text-xs font-black uppercase tracking-wide text-[#0B6B8A] transition hover:bg-[#EAF4FF] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Prev
+              </button>
+
+              {visiblePages.map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setCurrentPage(page)}
+                  className={`h-10 min-w-10 rounded-lg px-3 text-sm font-black transition ${
+                    currentPage === page
+                      ? "bg-[#0B6B8A] text-white shadow-md"
+                      : "border border-[#D8E2EF] bg-white text-[#0B6B8A] hover:bg-[#EAF4FF]"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="h-10 rounded-lg border border-[#D8E2EF] px-4 text-xs font-black uppercase tracking-wide text-[#0B6B8A] transition hover:bg-[#EAF4FF] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+        {archiveUser && (
+          <ConfirmModal
+            message={`Archive user profile "${archiveUser.email}"? This operator account will instantly lose system access pathways.`}
+            onConfirm={() => handleArchiveUser(archiveUser)}
+            onClose={() => setArchiveUser(null)}
+          />
+        )}
+
+        {/* Popups Layer */}
+        {addOpen && <UserModal onSave={handleAddUser} onClose={() => setAddOpen(false)} />}
+        
+        {activeUserModal && (
+          <UserModal 
+            user={activeUserModal} 
+            onSave={handleSaveEdit} 
+            onClose={() => setActiveUserModal(null)} 
+          />
+        )}
+
+        {archiveUser && (
+          <ConfirmModal
+            message={`Archive user profile "${archiveUser.email}"? This operator account will instantly lose system access pathways.`}
+            onConfirm={() => handleArchiveUser(archiveUser)}
+            onClose={() => setArchiveUser(null)}
+          />
+        )}
       </div>
-
-      {/* Table Footer */}
-      <div className="bg-slate-50 p-5 border-t border-slate-100 shrink-0 text-center z-20">
-        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">
-          SLC Seek &amp; Balik Centralized Account Services
-        </p>
-      </div>
-
-      {/* Popups Layer */}
-      {addOpen && (
-        <UserModal 
-          onSave={handleAddUser} 
-          onClose={() => setAddOpen(false)} 
-        />
-      )}
-      
-      {editUser && (
-        <UserModal
-          user={editUser}
-          onSave={handleSaveEdit}
-          onClose={() => setEditUser(null)}
-        />
-      )}
-
-      {viewUser && (
-        <UserModal
-          user={viewUser}
-          mode="view"
-          onClose={() => setViewUser(null)}
-        />
-      )}
-
-      {archiveUser && (
-        <ConfirmModal
-          message={`Archive user profile "${archiveUser.email}"? This operator account will instantly lose system access pathways.`}
-          onConfirm={() => handleArchiveUser(archiveUser)}
-          onClose={() => setArchiveUser(null)}
-        />
-      )}
-
     </div>
   );
 };

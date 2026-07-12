@@ -103,7 +103,7 @@ const LoginModal = ({ onClose }) => {
             />
           </div>
 
-          <h1 className="text-5xl font-serif leading-tight">
+          <h1 className="text-5xl font-old-english leading-tight">
             Saint Louis College
           </h1>
 
@@ -155,7 +155,7 @@ const LoginModal = ({ onClose }) => {
             )}
 
             <div>
-              <label className="text-sm font-semibold text-[#154B70]">
+              <label className="text-m font-semibold text-[#154B70]">
                 Email
               </label>
 
@@ -170,7 +170,7 @@ const LoginModal = ({ onClose }) => {
             </div>
 
             <div>
-              <label className="text-sm font-semibold text-[#154B70]">
+              <label className="text-m font-semibold text-[#154B70]">
                 Password
               </label>
 

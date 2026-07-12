@@ -1,52 +1,134 @@
 import React, { useEffect, useState } from "react";
-import { getLeaderboard } from "../api/api";
+import { getLeaderboard, getLeaderboardSettings } from "../api/api";
+
+const getSchoolYearAndSemFromDate = (dateString) => {
+  const referenceDate = dateString ? new Date(dateString) : new Date();
+  const finalDate = isNaN(referenceDate.getTime()) ? new Date() : referenceDate;
+  
+  const year = finalDate.getFullYear();
+  const month = finalDate.getMonth();
+
+  let sem = "";
+  let schoolYear = "";
+
+  if (month >= 7 && month <= 11) {
+    sem = "1st Semester";
+    schoolYear = `${year}-${year + 1}`;
+  } else if (month >= 0 && month <= 4) {
+    sem = "2nd Semester";
+    schoolYear = `${year - 1}-${year}`;
+  } else {
+    sem = "Short Term";
+    schoolYear = `${year}`;
+  }
+
+  return { schoolYear, sem };
+};
+
+const getDaysLeftFromDate = (dateString) => {
+  if (!dateString) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const closeDate = new Date(`${dateString}T00:00:00`);
+
+  return Math.max(
+    Math.ceil((closeDate - today) / (1000 * 60 * 60 * 24)),
+    0
+  );
+};  
 
 function Leaderboard() {
   const [leaders, setLeaders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [leaderboardActive, setLeaderboardActive] = useState(true);
+  const [daysLeft, setDaysLeft] = useState(null);
+  
+  const [config, setConfig] = useState({
+    auto_mode: false,
+    open_date: "",
+    close_date: "",
+  });
 
   useEffect(() => {
-    fetchLeaderboard();
+    fetchLeaderboardData();
 
-    const interval = setInterval(fetchLeaderboard, 3000);
+    const interval = setInterval(fetchLeaderboardData, 3000);
+
     return () => clearInterval(interval);
   }, []);
 
-  const fetchLeaderboard = async () => {
-  try {
-    const data = await getLeaderboard();
-    console.log("Leaderboard raw response:", data);
+  const fetchLeaderboardData = async () => {
+    try {
+      const [data, settingsData] = await Promise.all([
+        getLeaderboard(),
+        getLeaderboardSettings(),
+      ]);
 
-    if (Array.isArray(data)) {
-      setLeaderboardActive(true);
-      setLeaders(data);
-    } else {
-      setLeaderboardActive(Boolean(data.active));
-      setLeaders(Array.isArray(data.leaders) ? data.leaders : []);
+      setConfig({
+        auto_mode: Boolean(settingsData?.auto_mode),
+        open_date: settingsData?.open_date || "",
+        close_date: settingsData?.close_date || "",
+      });
+
+      if (Array.isArray(data)) {
+        setLeaderboardActive(true);
+        setLeaders(data);
+        setDaysLeft(null);
+      } else {
+        setLeaderboardActive(Boolean(data.active));
+        setLeaders(Array.isArray(data.leaders) ? data.leaders : []);
+        setDaysLeft(
+          data.days_left === null || data.days_left === undefined
+            ? null
+            : data.days_left
+        );
+      }
+    } catch (error) {
+      console.error("Failed to fetch leaderboard:", error);
+      setLeaders([]);
+      setLeaderboardActive(false);
+      setDaysLeft(null);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Failed to fetch leaderboard:", error);
-    setLeaders([]);
-    setLeaderboardActive(false);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const safeLeaders = Array.isArray(leaders) ? leaders : [];
   const topLeaders = safeLeaders.slice(0, 3);
   const otherLeaders = safeLeaders.slice(3);
 
+  const { schoolYear, sem } = getSchoolYearAndSemFromDate(
+    config.auto_mode ? config.open_date : null
+  );
+
+  const displayDaysLeft =
+  daysLeft ??
+  (config.auto_mode
+    ? getDaysLeftFromDate(config.close_date)
+    : null);
+
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-6">
       <div className="mb-6 text-center">
         <h2 className="text-2xl sm:text-3xl font-black text-[#163B65]">
-          Honest Finders Leaderboard
+          Honest Finders Leaderboard for SY {schoolYear} ({sem})
         </h2>
+
         <p className="mt-2 text-sm text-slate-500">
           Ranked by earned surrender and claim points
         </p>
+
+        {displayDaysLeft !== null && (
+          <p className="mt-2 text-sm font-black text-[#0B6B8A]">
+            {displayDaysLeft === 0
+              ? "Leaderboard ends today"
+              : `${displayDaysLeft} ${
+                  displayDaysLeft === 1 ? "day" : "days"
+                } left`}
+          </p>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-[#D8E2EE] bg-white shadow-sm">
@@ -54,13 +136,23 @@ function Leaderboard() {
           <div className="py-20 text-center text-slate-400">
             Loading leaderboard...
           </div>
+        ) : !leaderboardActive ? (
+          <div className="px-4 py-20 text-center">
+            <h3 className="text-lg font-bold text-slate-600">
+              Leaderboard is currently closed.
+            </h3>
+            <p className="mt-2 text-slate-400">
+              The leaderboard for SY {schoolYear} ({sem}) is inactive.
+              Please wait for the administrator to open the scoring window.
+            </p>
+          </div>
         ) : safeLeaders.length === 0 ? (
           <div className="px-4 py-20 text-center">
             <h3 className="text-lg font-bold text-slate-600">
-              Leaderboard is closed.
+              No leaderboard scores yet.
             </h3>
             <p className="mt-2 text-slate-400">
-              Semester is already done. Wait for the upcoming semester to open.
+              This leaderboard is active. Rankings will appear once students earn points.
             </p>
           </div>
         ) : (
@@ -70,7 +162,6 @@ function Leaderboard() {
                 <h3 className="text-lg font-black text-[#0B6FA4]">
                   Top {Math.min(safeLeaders.length, 3)}
                 </h3>
-
                 <span className="w-fit rounded-full bg-[#EAF6FC] px-3 py-1 text-sm font-bold text-[#0B6FA4]">
                   {safeLeaders.length} ranked
                 </span>
@@ -86,12 +177,10 @@ function Leaderboard() {
                           <div className="mx-auto flex h-8 w-8 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-slate-300 text-xs sm:text-xl font-black text-slate-800">
                             2
                           </div>
-
                           <h4 className="mt-2 sm:mt-4 text-[10px] sm:text-base font-black text-slate-900 leading-tight break-words line-clamp-2">
                             {topLeaders[1].full_name}
                           </h4>
                         </div>
-
                         <div className="mt-2 rounded-lg sm:rounded-xl bg-white py-1.5 sm:py-3 text-[10px] sm:text-base font-black text-[#0B6FA4]">
                           {topLeaders[1].points} pts
                         </div>
@@ -109,12 +198,10 @@ function Leaderboard() {
                           <div className="mx-auto flex h-10 w-10 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-yellow-400 text-sm sm:text-2xl font-black text-yellow-950">
                             1
                           </div>
-
                           <h4 className="mt-2 sm:mt-4 text-[10px] sm:text-lg font-black text-slate-900 leading-tight break-words line-clamp-2">
                             {topLeaders[0].full_name}
                           </h4>
                         </div>
-
                         <div className="mt-2 rounded-lg sm:rounded-xl bg-white py-1.5 sm:py-3 text-[10px] sm:text-base font-black text-[#0B6FA4]">
                           {topLeaders[0].points} pts
                         </div>
@@ -132,12 +219,10 @@ function Leaderboard() {
                           <div className="mx-auto flex h-8 w-8 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-orange-300 text-xs sm:text-xl font-black text-orange-950">
                             3
                           </div>
-
                           <h4 className="mt-2 sm:mt-4 text-[10px] sm:text-base font-black text-slate-900 leading-tight break-words line-clamp-2">
                             {topLeaders[2].full_name}
                           </h4>
                         </div>
-
                         <div className="mt-2 rounded-lg sm:rounded-xl bg-white py-1.5 sm:py-3 text-[10px] sm:text-base font-black text-[#0B6FA4]">
                           {topLeaders[2].points} pts
                         </div>
@@ -155,7 +240,6 @@ function Leaderboard() {
                 <h3 className="text-lg font-black text-[#0B6FA4]">
                   Other Rankings
                 </h3>
-
                 {otherLeaders.length > 0 && (
                   <span className="w-fit rounded-full bg-[#EAF6FC] px-3 py-1 text-sm font-bold text-[#0B6FA4]">
                     Rank 4+
@@ -171,7 +255,6 @@ function Leaderboard() {
                 <div className="space-y-3">
                   {otherLeaders.map((leader, index) => {
                     const rank = index + 4;
-
                     return (
                       <div
                         key={leader.id}
@@ -181,33 +264,24 @@ function Leaderboard() {
                           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-300 text-lg font-black text-slate-800">
                             {rank}
                           </div>
-
                           <div className="min-w-0">
                             <p className="text-[10px] sm:text-base font-black text-slate-900 leading-tight break-words line-clamp-2">
                               {leader.full_name}
                             </p>
-
                             <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
                               <span>Honest Finder</span>
-
-                              {leader.student_id && (
-                                <>
-                                  <span className="hidden sm:inline">•</span>
-                                  <span>ID: {leader.student_id}</span>
-                                </>
-                              )}
                             </div>
                           </div>
                         </div>
-
                         <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 sm:block sm:min-w-[112px] sm:text-right">
-                          <span className="text-xs font-black uppercase tracking-wide text-slate-400 sm:block">
+                          <span className="text-xs text-center font-black uppercase tracking-wide text-slate-400 sm:block">
                             Points
                           </span>
-
-                          <span className="text-xl font-black text-[#0B6FA4]">
-                            {leader.points}
-                          </span>
+                          <div className="flex items-center justify-center">
+                            <span className="text-xl font-black text-[#0B6FA4]">
+                              {leader.points}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     );

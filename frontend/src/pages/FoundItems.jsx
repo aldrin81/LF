@@ -3,7 +3,7 @@
   import { getItems, createLostItem, editLostItem, getItemById } from '../api/api';
   import ItemDetailModal from '../components/ItemDetailModal';
   import PhotoUpload from '../components/PhotoUpload';
-
+  import { Eye, X, CheckCircle, Trash2, AlertCircle } from 'lucide-react';
   const AREAS = ['Canteen','Gym','Highschool Grounds','Basement','Main Building','Sao Lobby','Parking Area', 'Others'];
   const CATS  = ['Personal','Accessories','Id','Electronics','Keys', 'Valuables'];
   const STATUSES = ['Pending','Claimed', 'Approved'];
@@ -129,7 +129,7 @@ useEffect(() => {
   }}
 >
   <div className="w-full max-w-4xl max-h-[92vh] overflow-hidden rounded-md bg-white shadow-2xl">
-    <div className="flex items-start justify-between bg-[#1478a7] px-6 py-3 text-white">
+    <div className="flex items-start justify-between bg-gradient-to-r from-[#0B648D] to-[#155F87] px-6 py-3 text-white">
       <div>
         <h3 className="text-2xl font-bold">
           {isEdit ? "Edit Surrendered Item" : "Add Surrendered Item"}
@@ -344,6 +344,11 @@ useEffect(() => {
     const [delItem, setDelItem] = useState(null);
     const [foundItem, setFoundItem] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [activeConfirmation, setActiveConfirmation] = useState(null);
+    const [notificationMessage, setNotificationMessage] = useState(null);
+
+    const isFetchingRef = useRef(false);
 
     const tableContainerRef = useRef(null);
 
@@ -401,6 +406,70 @@ useEffect(() => {
       }
     }
 
+    const getImageUrl = (img) => {
+        if (!img) return null;
+        const first = Array.isArray(img) ? img[0] : img;
+        if (!first) return null;
+        const path = typeof first === 'string' ? first : (first.image || first.file || first.url);
+        if (!path) return null;
+        return path.startsWith('http') ? path : `${API_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+      };
+
+    const handleUpdateStatus = async (item, status = 'Approved') => {
+        try {
+          await editLostItem(item.id, { status: status });
+    
+          setNotificationMessage("Item approved.");
+          setSelectedItem(null);
+          await fetchData({ showLoading: false });
+        } catch (error) {
+          console.error(`Error updating status to ${status}:`, error.response?.data || error.message);
+          const msg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+          setNotificationMessage(`Update failed: ${msg}`);
+        }
+      };
+
+      const fetchData = async ({ showLoading = false } = {}) => {
+              if (isFetchingRef.current) return;
+          
+              try {
+                isFetchingRef.current = true;
+                if (showLoading) setLoading(true);
+                const data = await getItems();
+                const actualData = Array.isArray(data) ? data : (data.results || []);
+                const pendingLostItems = actualData.filter((item) => {
+                  return item.status === 'Pending' && item.type === 'Lost';
+                });
+          
+                const nextSnapshot = JSON.stringify(
+                  pendingLostItems.map((item) => ({
+                    id: item.id,
+                    title: item.title,
+                    category: item.category,
+                    poster_name: item.poster_name,
+                    location: item.location,
+                    created_date: item.created_date,
+                    created_time: item.created_time,
+                    status: item.status,
+                    description: item.description,
+                    image: item.image,
+                    images: item.images,
+                    file: item.file,
+                  }))
+                );
+          
+                if (nextSnapshot !== lastItemsSnapshotRef.current) {
+                  lastItemsSnapshotRef.current = nextSnapshot;
+                  setItems(pendingLostItems);
+                }
+              } catch (error) {
+                console.error("Error fetching items:", error);
+              } finally {
+                if (showLoading) setLoading(false);
+                isFetchingRef.current = false;
+              }
+            };
+
     async function handleEdit(item) {
       try {
         const response = await getItemById(item.id);
@@ -420,6 +489,17 @@ useEffect(() => {
         });
       }
     }
+
+    const handleDelete = async (id) => {
+        try {
+          await editLostItem(id, { status: 'Archived' });
+          setNotificationMessage("Item declined.");
+          setSelectedItem(null);
+          fetchData({ showLoading: false });
+        } catch (error) {
+          console.error("Error deleting item:", error);
+        }
+      };
 
     async function handleSaveEdit(updatedForm) {
       try {
@@ -554,7 +634,7 @@ useEffect(() => {
 const visiblePages = getVisiblePages();
 
     return (
-  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(109vh-260px)]">
+   <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(109vh-260px)]">
     <div className="bg-white rounded-[18px] border border-[#D8E2EF] shadow-[0_8px_24px_rgba(45,54,109,0.08)] overflow-hidden flex flex-col h-[calc(100vh-130px)]">
       
       {/* Header */}
@@ -598,102 +678,69 @@ const visiblePages = getVisiblePages();
       </div>
 
       {/* Content */}
-      <div ref={tableContainerRef} className="flex-1 overflow-y-auto bg-white">
-            <table className="w-full min-w-[1000px] table-fixed border-separate border-spacing-0">
-              <thead className="sticky top-0 z-10">
+      <div ref={tableContainerRef} className="flex-1 overflow-auto bg-white">
+        <table className="w-full min-w-[1000px] table-fixed border-collapse">
+          <thead className="sticky top-0 z-10">
                 <tr>
-                  <th className="bg-[#0B6B8A] p-4 w-[20%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                    Item Ticket
-                  </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[13%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                    Item Name
-                  </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                    Category
-                  </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[16%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                    Reported By
-                  </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[17%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                    Area
-                  </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[16%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                    Estimation Date
-                  </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[15%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                    Status
-                  </th>
-                  <th className="bg-[#0B6B8A] p-4 w-[18%] border-b border-[#095A74] text-white font-black uppercase text-[15px] tracking-wide text-center">
-                    Action
-                  </th>
+                  <th className="w-[12%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Ticket</th>
+                  <th className="w-[15%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Item Name</th>
+                  <th className="w-[12%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Category</th>
+                  <th className="w-[16%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Reported By</th>
+                  <th className="w-[16%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Area</th>
+                  <th className="w-[12%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Date</th>
+                  <th className="w-[10%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Status</th>
+                  <th className="w-[10%] bg-[#0B6B8A] p-4 border border-gray-300 text-center text-[13px] font-black uppercase text-white">Action</th>
                 </tr>
               </thead>
 
               <tbody className="bg-white">
                 {paginatedItems.length > 0 ? (
                   paginatedItems.map((item, index) => (
-                    <tr
-                    key={item.id}
-                    className={`h-[70px] transition-colors ${
-                      index % 2 === 0 ? "bg-white" : "bg-[#F6FAFF]"
-                    } hover:bg-[#EAF4FF]`}
-                  >
-                    <td className="border-b border-[#D8E2EF] p-2 text-center align-middle font-bold text-[#071E3D]">
-                      {item.ticket_code}
+                    <tr key={item.id} className={`h-[70px] transition-colors ${index % 2 === 0 ? "bg-white" : "bg-[#F6FAFF]"} hover:bg-[#EAF4FF]`}>
+                    <td className="border border-gray-300 p-2 text-center align-middle font-bold text-[#0B6B8A] text-sm">{item.ticket_code}</td>
+
+                    <td className="truncate border-b border-[#D8E2EF] p-4 text-center align-middle font-bold text-[#071E3D]">{toTitleCase(item.title)}</td>
+                    <td className="border border-gray-300 p-4 text-center align-middle">
+                      <div className="flex items-center justify-center">
+                        <span className="inline-flex items-center justify-center px-3 py-1 text-[14px] uppercase text-[#2D366D]">
+                          {toTitleCase(item.category) || '-'}
+                        </span>
+                      </div>
                     </td>
 
-                    <td className="truncate border-b border-[#D8E2EF] p-4 text-center align-middle font-bold text-[#071E3D]">
-                      {toTitleCase(item.title)}
-                    </td>
-
-                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle text-[#071E3D]">
-                      <span className="inline-flex items-center justify-center rounded-full bg-[#EEF4FA] px-3 py-1 text-[13px] font-bold uppercase tracking-wide text-[#2D366D]">
-                        {toTitleCase(item.category) || '-'}
-                      </span>
-                    </td>
-
-                    <td className="truncate border-b border-[#D8E2EF] p-4 text-center align-middle text-[#52627A]">
-                      {toTitleCase(item.poster_name) || '-'}
-                    </td>
-
-                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle text-[#071E3D]">
-                      <div className="flex items-center justify-center gap-1.5 truncate">
+                    <td className="border border-gray-300 p-4 text-center align-middle text-slate-600 text-[14px]">{toTitleCase(item.poster_name) || '-'}</td>
+                    <td className="border border-gray-300 p-4 text-center align-middle text-slate-700 text-[14px]">
+                      <div className="flex items-center justify-center whitespace-normal leading-tight">
                         <span>{toTitleCase(item.location) || '-'}</span>
                       </div>
                     </td>
 
-                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
-                      <span className="block text-[15px] font-bold text-[#071E3D]">
+                    <td className="border border-gray-300 p-4 text-center align-middle text-slate-700 text-[14px]">
+                      <span className="block">
                         {item.created_date || '-'}
                       </span>
-                      <span className="block text-[15px] font-black uppercase tracking-wide text-[#7B8AA6]">
+                      <span className="block">
                         {item.created_time || '-'}
                       </span>
                     </td>
-
-                    <td className="border-b border-[#D8E2EF] p-4 text-center align-middle">
-                      <span
-                        className={`rounded-full px-3 py-1 text-[13px] font-black uppercase tracking-wider ${statusColor(item.status)}`}
-                      >
-                        {item.status}
-                      </span>
+                    <td className="border border-gray-300 p-4 text-center align-middle">
+                      <div className="flex items-center justify-center">
+                        <span className={`rounded px-3 py-1 text-[11px] font-black uppercase ${statusColor(item.status)}`}>
+                          {item.status}
+                        </span>
+                      </div> 
                     </td>
 
                       <td className="p-4 text-center align-middle border-b border-[#D8E2EF]">
                         <div className="flex justify-center items-center gap-2">
                           <button
-                            onClick={() => handleView(item)}
-                            className="bg-[#0B6B8A] text-white hover:bg-[#095A74] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
+                            onClick={() => setSelectedItem(item)}
+                            className="inline-flex items-center justify-center gap-2 rounded bg-[#0B6B8A] px-3 py-1.5 text-[14px] font-semibold text-white transition hover:bg-[#095A74]"
                           >
-                            View
+                            <Eye size={12} strokeWidth={4} />
+                            Review
                           </button>
 
-                          <button
-                            onClick={() => handleEdit(item)}
-                            className="bg-white border border-[#C79A2B] text-[#9A741C] hover:bg-[#FFF8E8] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
-                          >
-                            Edit
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -717,7 +764,7 @@ const visiblePages = getVisiblePages();
             </table>
           </div>
           {filteredFound.length > 0 && (
-            <div className="flex flex-col gap-4 border-t border-[#D8E2EF] bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="border-t border-[#D8E2EF] bg-white px-6 py-4 flex items-center justify-between shrink-0">
               <p className="text-sm font-bold text-[#7B8AA6]">
                 Showing {startIndex + 1}-
                 {Math.min(startIndex + ITEMS_PER_PAGE, filteredFound.length)} of{" "}
@@ -761,27 +808,216 @@ const visiblePages = getVisiblePages();
             </div>
           )}
 
-      {/* Interfaces Integration */}
+          {selectedItem && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedItem(null);
+          }}
+        >
+          <div className="w-full max-w-4xl max-h-[92vh] overflow-hidden rounded-md bg-white shadow-2xl">
+            <div className="flex items-start justify-between bg-gradient-to-r from-[#0B648D] to-[#155F87] px-6 py-3 text-white">
+              <div>
+                <h3 className="text-2xl font-bold">Item Review</h3>
+                <p className="mt-1 text-sm text-white/90">
+                  Review lost item details before approval
+                </p>
+              </div>
+
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="max-h-[calc(92vh-88px)] overflow-y-auto px-6 py-5">
+              <div className="mx-auto max-w-3xl space-y-4">
+                <img
+                  src={getImageUrl(selectedItem.image || selectedItem.images || selectedItem.file) || "https://via.placeholder.com/900x500?text=No+Image"}
+                  className="h-72 w-full rounded-xl border border-slate-200 bg-slate-100 object-cover"
+                  alt="Item Preview"
+                />
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Item Name</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg font-bold text-slate-700">
+                      {toTitleCase(selectedItem.title) || '-'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Reported By</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {toTitleCase(selectedItem.poster_name) || '-'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Category</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {toTitleCase(selectedItem.category) || '-'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Area Lost</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {toTitleCase(selectedItem.location) || '-'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Date Reported</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {selectedItem.created_date || '-'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Status</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      <span className={`rounded-full px-3 py-1 text-[13px] font-black uppercase tracking-wider ${statusColor(selectedItem.status)}`}>
+                        {selectedItem.status || '-'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Description</p>
+                  <div className="min-h-[96px] rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                    {selectedItem.description || 'No description provided.'}
+                  </div>
+                </div>
+
+                {selectedItem.status === 'Approved' && (
+                  <div className="flex items-center gap-4 rounded-xl border border-green-200 bg-green-50 p-4">
+                    <div className="rounded-xl bg-green-500 p-2 text-white shadow-md">
+                      <CheckCircle size={18} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black uppercase text-green-700">Item Publicly Visible</p>
+                      <p className="text-xs font-bold uppercase text-green-600">
+                        This item has been approved and is now visible to users.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+                  {selectedItem.status === 'Pending' ? (
+                    <>
+                      <button
+                        onClick={() => setActiveConfirmation({
+                          text: "Are you sure you want to approve this item?",
+                          action: () => handleUpdateStatus(selectedItem, 'Approved')
+                        })}
+                        className="rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] py-3 text-base font-semibold uppercase tracking-wide text-white shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D] hover:shadow-lg active:scale-[0.98]"
+                      >
+                        Approve Item
+                      </button>
+                      <button
+                        onClick={() => setActiveConfirmation({
+                          text: "Are you sure you want to decline this item?",
+                          action: () => handleDelete(selectedItem.id)
+                        })}
+                        className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
+                      >
+                        Decline
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {selectedItem.status === 'Approved' && (
+                        <button
+                          onClick={() => setActiveConfirmation({
+                            text: "Are you sure you want to change this item's status to Claimed?",
+                            action: () => handleUpdateStatus(selectedItem, 'Claimed')
+                          })}
+                          className="rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] py-3 text-base font-semibold uppercase tracking-wide text-white shadow-md transition-all duration-200 hover:from-[#44509B] hover:to-[#2D366D]"
+                        >
+                          Mark Claimed
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setSelectedItem(null)}
+                        className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
+                      >
+                        Close
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeConfirmation && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/35 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-[28px] bg-white px-8 py-8 text-center shadow-2xl">
+            <div className="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-full bg-[#EAF4F8] text-[#0B6B8A]">
+              <AlertCircle size={30} strokeWidth={2.5} />
+            </div>
+
+            <h5 className="mb-3 text-2xl font-black text-[#144B70]">
+              System Confirmation
+            </h5>
+
+            <p className="mx-auto mb-8 max-w-[280px] text-sm font-medium leading-6 text-[#5F6F8C]">
+              {activeConfirmation.text}
+            </p>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  activeConfirmation.action();
+                  setActiveConfirmation(null);
+                }}
+                className="h-12 w-full rounded-xl bg-[#0B6B8A] text-sm font-black uppercase tracking-wide text-white shadow-md transition hover:bg-[#095A74] active:scale-[0.98]"
+              >
+                Confirm
+              </button>
+
+              <button
+                onClick={() => setActiveConfirmation(null)}
+                className="h-12 w-full rounded-xl border border-[#0B6B8A] bg-white text-sm font-black uppercase tracking-wide text-[#0B6B8A] transition hover:bg-[#EAF4F8]"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notificationMessage && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#2c3e75]/20">
+          <div className="bg-[#2c3e75] text-white w-full max-w-xs rounded-2xl p-5 shadow-2xl border border-[#1e2b54] text-center">
+            <p className="text-xs font-bold uppercase tracking-wider mb-4 text-slate-100">{notificationMessage}</p>
+            <button
+              onClick={() => setNotificationMessage(null)}
+              className="w-full bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition"
+            >
+              Acknowledge
+            </button>
+          </div>
+        </div>
+      )}
+
       {addOpen && (
         <ItemModal
+          item={null}
           onSave={handleAddItem}
           onClose={() => setAddOpen(false)}
-        />
-      )}
-
-      {editItem && (
-        <ItemModal
-          item={editItem}
-          onSave={handleSaveEdit}
-          onClose={() => setEditItem(null)}
-        />
-      )}
-
-      {viewItem && (
-        <ItemDetailModal
-          item={viewItem}
-          onClose={() => setViewItem(null)}
-          onClaim={handleClaimItem}
         />
       )}
     </div>

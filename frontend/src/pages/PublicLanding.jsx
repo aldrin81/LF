@@ -175,7 +175,7 @@ useEffect(() => {
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
-                      className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 rounded-xl sm:rounded-full text-xs sm:text-[13px] font-black uppercase tracking-widest font-sans transition-all min-w-0 sm:min-w-[100px] ${
+                      className={`flex-1 sm:flex-none px-4 sm:px-6 py-4 sm:py-3 rounded-xl sm:rounded-full text-sm sm:text-[16px] font-black uppercase tracking-wide sm:tracking-widest font-sans transition-all min-w-0 sm:min-w-[150px] text-center ${
                         filter === f
                           ? "bg-white text-[#2D366D] shadow-sm"
                           : "text-slate-400 hover:text-slate-600"
@@ -412,8 +412,6 @@ useEffect(() => {
 
           <div className="flex-grow relative">
 
-            
-
             <Leaderboard />
 
           </div>
@@ -430,8 +428,8 @@ useEffect(() => {
 
       </main>
 
-      <footer className="fixed bottom-0 left-0 w-full bg-slate-50 border-t border-slate-200 py-2 z-50">
-        <p className="text-center text-[10px] text-slate-400 font-sans tracking-[0.2em]">
+      <footer className="fixed bottom-0 left-0 w-full bg-slate-50 border-t border-slate-200 py-4 z-50">
+        <p className="text-right pr-4 sm:pr-8 text-[16px] text-slate-400 font-sans tracking-[0.2em]">
           © 2021 Saint Louis College, City of San Fernando, La Union. All rights reserved
         </p>
       </footer>
