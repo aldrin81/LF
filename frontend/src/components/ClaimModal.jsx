@@ -125,22 +125,22 @@ const ClaimModal = ({ item, onClose }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm sm:text-lg font-semibold text-slate-500 mb-2">First Name</label>
-                  <input type="text" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20" required />
+                  <input type="text" placeholder="Juan" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20" required />
                 </div>
                 <div>
                   <label className="block text-sm sm:text-lg font-semibold text-slate-500 mb-2">Last Name</label>
-                  <input type="text" value={form.last_name} onChange={(e) => set("last_name", e.target.value)} className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20" required />
+                  <input type="text" placeholder="Dela Cruz" value={form.last_name} onChange={(e) => set("last_name", e.target.value)} className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20" required />
                 </div>
                 <div>
                   <label className="block text-sm sm:text-lg font-semibold text-slate-500 mb-2">Contact Number</label>
                   <div className="flex items-center rounded-lg border border-slate-300 overflow-hidden focus-within:border-[#2B3A74] focus-within:ring-2 focus-within:ring-[#2B3A74]/20">
                     <span className="px-4 py-3 bg-slate-100 text-base sm:text-lg text-slate-600 border-r border-slate-300">+63</span>
-                    <input type="tel" value={form.claimant_contact} onChange={(e) => set("claimant_contact", e.target.value.replace(/\D/g, "").slice(0, 10))} className="w-full px-4 py-3 text-base sm:text-lg outline-none" required />
+                    <input type="tel" placeholder="9942512578" value={form.claimant_contact} onChange={(e) => set("claimant_contact", e.target.value.replace(/\D/g, "").slice(0, 10))} className="w-full px-4 py-3 text-base sm:text-lg outline-none" required />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm sm:text-lg font-semibold text-slate-500 mb-2">Email</label>
-                  <input type="email" value={form.claimant_email} onChange={(e) => set("claimant_email", e.target.value)} className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20" required />
+                  <input type="email" placeholder="juandelacruz@slc-sflu.edu.ph" value={form.claimant_email} onChange={(e) => set("claimant_email", e.target.value)} className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20" required />
                 </div>
                 <div>
                   <label className="block text-sm sm:text-lg font-semibold text-slate-500 mb-2">Claim Date</label>

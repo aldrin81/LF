@@ -116,37 +116,37 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
 
           {/* Welcome */}
           <div
-  className={`px-8 mb-8 transition-all duration-300 ${
-    isCollapsed
-      ? "opacity-0 h-0 mb-0 overflow-hidden"
-      : "opacity-100"
-  }`}
->
+            className={`px-8 mb-8 transition-all duration-300 ${
+              isCollapsed
+                ? "opacity-0 h-0 mb-0 overflow-hidden"
+                : "opacity-100"
+            }`}
+          >
 
-  <p className="text-lg font-medium text-slate-400">
-    Welcome back,
-  </p>
+            <p className="text-lg font-medium text-slate-400">
+              Welcome back,
+            </p>
 
-  <h2 className="mt-1 text-xl font-extrabold text-[#0B6FA4] leading-tight">
+            <h2 className="mt-1 text-xl font-extrabold text-[#0B6FA4] leading-tight">
 
-    {currentUser?.first_name} {currentUser?.last_name}
+              {currentUser?.first_name} {currentUser?.last_name}
 
-  </h2>
+            </h2>
 
-  <h2 className="mt-1 text-lg font-extrabold text-[#0B6FA4] leading-tight">
+            <h2 className="mt-1 text-lg font-extrabold text-[#0B6FA4] leading-tight">
 
-    {formattedRole || "User"}
+              {formattedRole || "User"}
 
-  </h2>
+            </h2>
 
-  <button
-    onClick={() => setShowProfileModal(true)}
-    className="mt-2 text-[15px] font-semibold text-[#0B6FA4] hover:underline transition"
-  >
-    View Profile
-  </button>
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className="mt-2 text-[15px] font-semibold text-[#0B6FA4] hover:underline transition"
+            >
+              View Profile
+            </button>
 
-</div>
+          </div>
 
 
           {/* Navigation */}
@@ -261,10 +261,10 @@ const Sidebar = ({ role, onLogout, isCollapsed, setIsCollapsed }) => {
       )}
 
       <ProfileModal
-  isOpen={showProfileModal}
-  onClose={() => setShowProfileModal(false)}
-  user={currentUser}
-/>
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={currentUser}
+      />
     </>
   );
 };

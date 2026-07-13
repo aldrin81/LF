@@ -23,12 +23,16 @@ export const getClaims = async () => {
 };
 
 
-export const scheduleMeeting = async (id, meeting_date) => {
+export const reviewClaim = async (id, payload) => {
+  const token = localStorage.getItem("accessToken");
 
   const res = await api.put(
-    `claim/schedule/${id}/`,
+    `claim/review/${id}/`,
+    payload,
     {
-      meeting_date
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     }
   );
 

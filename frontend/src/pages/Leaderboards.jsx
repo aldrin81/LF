@@ -120,7 +120,7 @@ function Leaderboard() {
           Ranked by earned surrender and claim points
         </p>
 
-        {displayDaysLeft !== null && (
+        {daysLeft !== null && daysLeft <= 30 && (
           <p className="mt-2 text-sm font-black text-[#0B6B8A]">
             {displayDaysLeft === 0
               ? "Leaderboard ends today"

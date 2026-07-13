@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { getClaims, scheduleMeeting } from "../api/api";
+import { getClaims, reviewClaim } from "../api/api";
 
 const ClaimRequests = () => {
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
-  const [date, setDate] = useState("");
-  const [sending, setSending] = useState(false);
+  const [remark, setRemark] = useState("");
+  const [reviewing, setReviewing] = useState(false);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [confirmation, setConfirmation] = useState(null);
+  const [remarkOpen, setRemarkOpen] = useState(false);
 
   useEffect(() => {
     load();
@@ -25,25 +27,83 @@ const ClaimRequests = () => {
     }
   };
 
-  const send = async () => {
-    if (!date) return alert("Select a schedule first");
+  const review = async (decision) => {
+    if (decision === "DECLINED" && !remark.trim()) {
+      alert("Please enter a reason for declining.");
+      return;
+    }
 
     try {
-      setSending(true);
-      await scheduleMeeting(selected.id, date);
+      setReviewing(true);
+
+      await reviewClaim(selected.id, {
+        decision,
+        admin_remark: remark.trim(),
+      });
 
       setSelected(null);
-      setDate("");
+      setRemark("");
       await load();
 
-      alert("Meeting scheduled successfully");
+      alert(
+        decision === "APPROVED"
+          ? "Appointment accepted and email sent."
+          : "Appointment declined and email sent."
+      );
     } catch (err) {
       console.error(err);
-      alert("Failed to schedule meeting");
+      alert("Failed to review the appointment.");
     } finally {
-      setSending(false);
+      setReviewing(false);
     }
   };
+
+  const submitReview = async (decision) => {
+    if (decision === "DECLINED" && !remark.trim()) {
+      alert("Please enter a reason for declining.");
+      return;
+    }
+
+    try {
+      setReviewing(true);
+
+      await reviewClaim(selected.id, {
+        decision,
+        admin_remark: remark.trim(),
+      });
+
+      setConfirmation(null);
+      setRemarkOpen(false);
+      setSelected(null);
+      setRemark("");
+
+      await load();
+
+      alert(
+        decision === "APPROVED"
+          ? "Appointment accepted and email sent."
+          : "Appointment declined and email sent."
+      );
+    } catch (error) {
+      console.error(error);
+      alert("Failed to review the appointment.");
+    } finally {
+      setReviewing(false);
+    }
+  };
+
+const confirmDecision = async () => {
+  const decision = confirmation;
+
+  setConfirmation(null);
+
+  if (decision === "DECLINED") {
+    setRemarkOpen(true);
+    return;
+  }
+
+  await submitReview("APPROVED");
+};
 
   if (loading) {
     return (
@@ -162,10 +222,13 @@ const ClaimRequests = () => {
                     </td>
                     <td className="border border-gray-300 p-4 text-center align-middle">
                       <button
-                        onClick={() => setSelected(c)}
+                        onClick={() => {
+                          setSelected(c);
+                          setRemark("");
+                        }}
                         className="inline-flex items-center justify-center gap-2 rounded bg-[#0B6B8A] px-3 py-1.5 text-[14px] font-semibold text-white transition hover:bg-[#095A74]"
                       >
-                        Schedule
+                        Review
                       </button>
                     </td>
                   </tr>
@@ -234,52 +297,233 @@ const ClaimRequests = () => {
           </div>
         )}
 
-        {/* Schedule Meeting Modal */}
-        {selected && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#071E3D]/30 backdrop-blur-sm p-4">
-            <div className="bg-white w-full max-w-md rounded shadow-2xl border border-[#D8E2EF] overflow-hidden">
+        {/* Review Claim Appointment Modal */}
+          {selected && (
+            <div
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setSelected(null);
+                  setRemark("");
+                }
+              }}
+            >
+              <div className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-md bg-white shadow-2xl">
+                <div className="flex items-start justify-between bg-gradient-to-r from-[#0B648D] to-[#155F87] px-6 py-3 text-white">
+                  <div>
+                    <h3 className="text-2xl font-bold">
+                      Claim Appointment Review
+                    </h3>
+                    <p className="mt-1 text-sm text-white/90">
+                      Review the claimant's requested appointment before confirmation
+                    </p>
+                  </div>
 
-              <div className="px-6 py-4 bg-[#0B6B8A]">
-                <h2 className="text-white font-semibold text-[15px]">
-                  Schedule Meeting
-                </h2>
-                <p className="text-[13px] text-white/80 mt-1">
-                  {selected.claimant_name}
-                </p>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <input
-                  type="datetime-local"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-4 py-3 border border-[#CBD8E8] rounded text-sm focus:ring-2 focus:ring-[#0B6B8A]/20 focus:border-[#0B6B8A] outline-none"
-                />
-
-                <div className="flex gap-3">
                   <button
+                    type="button"
                     onClick={() => {
                       setSelected(null);
-                      setDate("");
+                      setRemark("");
                     }}
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded bg-slate-100 px-3 py-2 text-[14px] font-semibold text-slate-500 transition hover:bg-slate-200"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-xl text-white transition hover:bg-white/25"
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="max-h-[calc(92vh-88px)] overflow-y-auto px-6 py-5">
+                  <div className="mx-auto max-w-3xl space-y-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <p className="mb-2 text-sm font-bold uppercase text-slate-700">
+                          Claimant Name
+                        </p>
+                        <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg font-bold text-slate-700">
+                          {selected.claimant_name || "-"}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="mb-2 text-sm font-bold uppercase text-slate-700">
+                          Contact Number
+                        </p>
+                        <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                          {selected.claimant_contact || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <p className="mb-2 text-sm font-bold uppercase text-slate-700">
+                          Email Address
+                        </p>
+                        <div className="min-h-14 break-all rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                          {selected.claimant_email || "No email provided"}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="mb-2 text-sm font-bold uppercase text-slate-700">
+                          Item ID
+                        </p>
+                        <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                          #{selected.item}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <p className="mb-2 text-sm font-bold uppercase text-slate-700">
+                          Preferred Date
+                        </p>
+                        <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                          {selected.meeting_date || "-"}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="mb-2 text-sm font-bold uppercase text-slate-700">
+                          Preferred Time
+                        </p>
+                        <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                          {selected.meeting_time || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-sm font-bold uppercase text-slate-700">
+                        Proof / Claim Details
+                      </p>
+                      <div className="min-h-[110px] rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                        {selected.proof_description || "No details provided."}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                      <div className="rounded-xl bg-[#0B6B8A] p-2 text-white shadow-md">
+                        ✓
+                      </div>
+                      <div>
+                        <p className="text-sm font-black uppercase text-[#0B6B8A]">
+                          Confirm Appointment
+                        </p>
+                        <p className="text-xs font-bold uppercase text-blue-600">
+                          An acceptance email will be sent to the claimant.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmation("DECLINED")}
+                        disabled={reviewing}
+                        className="h-12 rounded-xl bg-red-600 text-sm font-black uppercase tracking-wide text-white hover:bg-red-700 disabled:opacity-50"
+                      >
+                        Decline
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setConfirmation("APPROVED")}
+                        disabled={reviewing}
+                        className="rounded-xl bg-gradient-to-b from-[#384388] to-[#2D366D] py-3 text-base font-semibold uppercase tracking-wide text-white disabled:opacity-50"
+                      >
+                        Confirm Appointment
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {confirmation && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/35 p-4 backdrop-blur-sm">
+              <div className="w-full max-w-sm rounded-[28px] bg-white px-8 py-8 text-center shadow-2xl">
+                <div className="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-full bg-[#EAF4F8] text-3xl text-[#0B6B8A]">
+                  !
+                </div>
+
+                <h5 className="mb-3 text-2xl font-black text-[#144B70]">
+                  System Confirmation
+                </h5>
+
+                <p className="mx-auto mb-8 max-w-[280px] text-sm font-medium leading-6 text-[#5F6F8C]">
+                  Are you sure you want to{" "}
+                  {confirmation === "APPROVED" ? "accept" : "decline"} this claim
+                  appointment?
+                </p>
+
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={confirmDecision}
+                    className="h-12 w-full rounded-xl bg-[#0B6B8A] text-sm font-black uppercase tracking-wide text-white shadow-md hover:bg-[#095A74]"
+                  >
+                    Confirm
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setConfirmation(null)}
+                    className="h-12 w-full rounded-xl border border-[#0B6B8A] bg-white text-sm font-black uppercase tracking-wide text-[#0B6B8A]"
                   >
                     Cancel
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {remarkOpen && selected && (
+            <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/35 p-4 backdrop-blur-sm">
+              <div className="w-full max-w-md rounded-[28px] bg-white px-8 py-8 shadow-2xl">
+                <h3 className="text-xl font-black text-[#144B70]">
+                  Decline Claim Appointment
+                </h3>
+
+                <p className="mt-2 text-sm text-[#5F6F8C]">
+                  Provide a reason that will be emailed to {selected.claimant_name}.
+                </p>
+
+                <textarea
+                  value={remark}
+                  onChange={(e) => setRemark(e.target.value)}
+                  rows={5}
+                  placeholder="Write the reason for declining..."
+                  className="mt-5 w-full rounded-xl border border-slate-300 p-3 text-sm outline-none focus:border-[#0B6B8A]"
+                />
+
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRemarkOpen(false);
+                      setRemark("");
+                    }}
+                    disabled={reviewing}
+                    className="h-12 rounded-xl border border-[#0B6B8A] text-sm font-black uppercase text-[#0B6B8A]"
+                  >
+                    Back
+                  </button>
 
                   <button
-                    onClick={send}
-                    disabled={sending}
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded bg-[#0B6B8A] px-3 py-2 text-[14px] font-semibold text-white transition hover:bg-[#095A74] disabled:opacity-50"
+                    type="button"
+                    onClick={() => submitReview("DECLINED")}
+                    disabled={reviewing}
+                    className="h-12 rounded-xl bg-red-600 text-sm font-black uppercase text-white hover:bg-red-700 disabled:opacity-50"
                   >
-                    {sending ? "Sending..." : "Send"}
+                    {reviewing ? "Sending..." : "Submit Decline"}
                   </button>
                 </div>
               </div>
-
             </div>
-          </div>
-        )}
+          )}
       </div>
     </div>
   );

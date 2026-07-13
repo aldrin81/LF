@@ -1,6 +1,8 @@
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -17,90 +19,118 @@ def get_claim(request):
     return Response(serializer.data)
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 def create_claim(request):
     serializer = ClaimSerializer(data=request.data)
 
     if serializer.is_valid():
         claim = serializer.save()
 
-        staff_emails = list(
-            User.objects.filter(
-                role__in=["admin", "moderator"],
-                is_archived=False,
-                email__isnull=False,
-            )
-            .exclude(email="")
-            .values_list("email", flat=True)
+        return Response(
+            {
+                "message": "Claim appointment request submitted successfully.",
+                "claim": ClaimSerializer(claim).data,
+            },
+            status=201,
         )
-
-        if staff_emails:
-            try:
-                send_mail(
-                    "New Claim Request Submitted",
-                    f"""
-A new claim request has been submitted.
-
-Item ID: {claim.item.id}
-Item Name: {claim.item.title}
-Item Category: {claim.item.category}
-Item Location: {claim.item.location}
-
-Claimant Name: {claim.claimant_name}
-Contact Number: {claim.claimant_contact}
-Claimant Email: {claim.claimant_email}
-
-Preferred Meeting Date: {claim.meeting_date}
-Preferred Meeting Time: {claim.meeting_time}
-
-Proof / Details:
-{claim.proof_description}
-""",
-                    settings.DEFAULT_FROM_EMAIL,
-                    staff_emails,
-                    fail_silently=False,
-                )
-            except Exception as e:
-                print("Failed to send claim email:", e)
-
-        return Response(serializer.data, status=201)
 
     return Response(serializer.errors, status=400)
 
-@api_view(['PUT'])
-def schedule_meeting(request, pk):
-    claim = Claim.objects.get(pk=pk)
-
-    meeting_date = request.data.get("meeting_date")
-    meeting_time = request.data.get("meeting_time")
-
-    if not meeting_date:
-        return Response({"meeting_date": "Meeting date is required."}, status=400)
-
-    if not meeting_time:
-        return Response({"meeting_time": "Meeting time is required."}, status=400)
-
-    claim.meeting_date = meeting_date
-    claim.meeting_time = meeting_time
-    claim.meeting_location = "Student Affairs Office"
-    claim.save()
-
-    if claim.claimant_email:
-        send_mail(
-            "Claim Meeting Scheduled",
-            f"""
-Hello {claim.claimant_name},
-
-Your claim is scheduled.
-
-Location: Student Affairs Office
-Date: {meeting_date}
-Time: {meeting_time}
-
-Bring valid ID.
-""",
-            settings.DEFAULT_FROM_EMAIL,
-            [claim.claimant_email],
+@api_view(["PUT"])
+def review_claim(request, pk):
+    if (
+        not request.user.is_authenticated
+        or getattr(request.user, "role", None) not in ["admin", "moderator"]
+    ):
+        return Response(
+            {"detail": "Only admins or moderators can review claims."},
+            status=status.HTTP_403_FORBIDDEN,
         )
 
-    return Response({"message": "OK"})
+    try:
+        claim = Claim.objects.get(pk=pk)
+    except Claim.DoesNotExist:
+        return Response(
+            {"detail": "Claim request not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if claim.status != "PENDING":
+        return Response(
+            {"detail": "This claim request was already reviewed."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    decision = request.data.get("decision")
+    remark = (request.data.get("admin_remark") or "").strip()
+
+    if decision not in ["APPROVED", "DECLINED"]:
+        return Response(
+            {"detail": "Decision must be APPROVED or DECLINED."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if decision == "DECLINED" and not remark:
+        return Response(
+            {"admin_remark": "A reason is required when declining."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    claim.status = decision
+    claim.admin_remark = remark
+    claim.reviewed_by = request.user
+    claim.reviewed_at = timezone.now()
+    claim.save()
+
+    email_sent = False
+
+    if claim.claimant_email:
+        if decision == "APPROVED":
+            subject = "Claim Appointment Accepted"
+            message = f"""
+    Hello {claim.claimant_name},
+
+    Your claim appointment has been accepted.
+
+    Item: {claim.item.title}
+    Date: {claim.meeting_date}
+    Time: {claim.meeting_time}
+    Location: {claim.meeting_location}
+
+    Please bring your school ID and present it to SAO.
+    """
+        else:
+            subject = "Claim Appointment Declined"
+            message = f"""
+    Hello {claim.claimant_name},
+
+    Your claim appointment request was declined.
+
+    Reason:
+    {claim.admin_remark}
+
+    Please contact Student Affairs if you need assistance.
+    """
+
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [claim.claimant_email],
+                fail_silently=False,
+            )
+            email_sent = True
+
+        except Exception as error:
+            print("Failed to send claim review email:", error)
+
+    return Response({
+        "claim": ClaimSerializer(claim).data,
+        "email_sent": email_sent,
+        "message": (
+            "Claim reviewed and email sent."
+            if email_sent
+            else "Claim reviewed, but the email could not be sent."
+        ),
+})

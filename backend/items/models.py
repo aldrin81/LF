@@ -35,6 +35,7 @@ class ItemDetails(models.Model):
         ("Claimed", "Claimed"),
         ("Returned", "Returned"),
         ("Archived", "Archived"),
+        ("Declined", "Declined"),
     ]
 
     title = models.CharField(max_length=30)
@@ -57,6 +58,8 @@ class ItemDetails(models.Model):
     #GAMIFICATION
     surrender_points_awarded = models.BooleanField(default=False)
     claimed_bonus_awarded = models.BooleanField(default=False)
+
+    decline_remark = models.TextField(blank=True, default="")
 
     # 🔥 TICKET SYSTEM
     ticket_code = models.CharField(max_length=20, unique=True, blank=True, null=True)

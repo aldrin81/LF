@@ -73,11 +73,16 @@ export default function TrackItemPage() {
                                     Item Found
                                 </h2>
 
-                                <span className={`text-xs px-3 py-1 rounded-full font-bold ${item.status === "Approved"
-                                        ? "bg-green-100 text-green-700"
+                                <span
+                                className={`text-xs px-3 py-1 rounded-full font-bold ${
+                                    item.status === "Approved"
+                                    ? "bg-green-100 text-green-700"
+                                    : item.status === "Declined"
+                                        ? "bg-red-100 text-red-700"
                                         : "bg-yellow-100 text-yellow-700"
-                                    }`}>
-                                    {item.status}
+                                }`}
+                                >
+                                {item.status}
                                 </span>
                             </div>
 
@@ -124,6 +129,17 @@ export default function TrackItemPage() {
                                 </div>
 
                             </div>
+
+                            {item.status === "Declined" && item.decline_remark && (
+                                <div className="mt-5 border-t border-red-200 pt-4">
+                                    <p className="text-xs font-bold uppercase text-red-600">
+                                    Admin Remark
+                                    </p>
+                                    <p className="mt-2 whitespace-pre-wrap rounded-xl bg-red-50 p-4 text-sm text-red-800">
+                                    {item.decline_remark}
+                                    </p>
+                                </div>
+                                )}
 
                         </div>
                     )}

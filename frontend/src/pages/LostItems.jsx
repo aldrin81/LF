@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Eye, X, CheckCircle, Trash2, AlertCircle } from 'lucide-react';
+import { Eye, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getItems, getItemById, API_URL, editLostItem, createLostItem } from "../api/api";
 import { Form } from 'react-router-dom';
@@ -8,12 +8,14 @@ import PhotoUpload from '../components/PhotoUpload';
 
 const AREAS = ['Canteen','Gym','Highschool Grounds','Basement','Main Building','Sao Lobby','Parking Area', 'Others'];
 const CATS  = ['Personal','Accessories','Id','Electronics','Keys', 'Valuables'];
-const STATUSES = ['Pending','Claimed', 'Approved'];
+const STATUSES = ['Pending','Claimed', 'Approved', 'Declined'];
 
 const statusColor = (s) =>
   s === 'Claimed'  ? 'bg-purple-100 text-purple-500' :
   s === 'Pending'  ? 'bg-orange-100 text-orange-500' :
-  'bg-green-100 text-green-500';
+  s === 'Declined'  ? 'bg-red-100 text-red-500' :
+  s === 'Approved'  ? 'bg-green-100 text-green-500' :
+  'bg-gray-100 text-gray-500';
 
 const EMPTY = {
   title: '',
@@ -339,6 +341,8 @@ const LostItems = ({ currentFilter,role }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [activeConfirmation, setActiveConfirmation] = useState(null);
   const [notificationMessage, setNotificationMessage] = useState(null);
+  const [declineRemarkOpen, setDeclineRemarkOpen] = useState(false);
+  const [declineRemark, setDeclineRemark] = useState("");
 
   const isFetchingRef = useRef(false);
   
@@ -437,29 +441,6 @@ const LostItems = ({ currentFilter,role }) => {
         }
       };
 
-
-  async function handleView(item) {
-    try {
-      const response = await getItemById(item.id);
-      
-      // 1. Extract the data correctly
-      let data = response;
-      if (Array.isArray(response)) data = response[0];
-      else if (response && response.results) data = response.results[0];
-
-      // 2. Debug: Check if 'image' or 'images' exists in 'data'
-      console.log("Full Item Data from API:", data);
-
-      // 3. Set the state
-      setViewItem(data);
-    } catch (error) {
-      console.error("Error fetching item details:", error);
-      // Fallback to the list item if API call fails
-      setViewItem(item);
-    }
-  }
-
-
   async function handleEdit(item) {
     try {
       const response = await getItemById(item.id);
@@ -543,16 +524,28 @@ const LostItems = ({ currentFilter,role }) => {
     }
   }
 
-  const handleDelete = async (id) => {
-      try {
-        await editLostItem(id, { status: 'Archived' });
-        setNotificationMessage("Item declined.");
-        setSelectedItem(null);
-        fetchData({ showLoading: false });
-      } catch (error) {
-        console.error("Error deleting item:", error);
-      }
-    };
+  const handleDecline = async (item, remark) => {
+    if (!remark.trim()) {
+      window.alert("Please provide a reason for declining this item.");
+      return;
+    }
+
+    try {
+      await editLostItem(item.id, {
+        status: "Declined",
+        decline_remark: remark.trim(),
+      });
+
+      setNotificationMessage("Item declined.");
+      setDeclineRemark("");
+      setDeclineRemarkOpen(false);
+      setSelectedItem(null);
+      await fetchItems();
+    } catch (error) {
+      console.error("Error declining item:", error.response?.data || error.message);
+      window.alert("Failed to decline the item.");
+    }
+  };
 
   const handleUpdateStatus = async (item, status = 'Approved') => {
     try {
@@ -567,36 +560,6 @@ const LostItems = ({ currentFilter,role }) => {
       setNotificationMessage(`Update failed: ${msg}`);
     }
   };
-
-  async function handleClaimItem(item) {
-    if (item.status === 'Claimed') {
-      window.alert('This item is already claimed.');
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-
-      formData.append('title', item.title || '');
-      formData.append('poster_name', item.poster_name || '');
-      formData.append('category', item.category || '');
-      formData.append('location', item.location || '');
-      formData.append('created_date', item.created_date || '');
-      formData.append('created_time', item.created_time || '');
-      formData.append('description', item.description || '');
-      formData.append('status', 'Claimed');
-
-      await editLostItem(item.id, formData);
-
-      window.alert('Item marked as claimed!');
-      await fetchItems();
-      setViewItem(null);
-    } catch (error) {
-      console.error('Error claiming item:', error);
-      console.error('Response data:', error.response?.data);
-      window.alert('Failed to claim item. Please try again.');
-    }
-  }
 
   const filteredLost = items.filter((item) => {
     const searchText = search.toLowerCase();
@@ -937,10 +900,12 @@ const visiblePages = getVisiblePages();
                         Approve Item
                       </button>
                       <button
-                        onClick={() => setActiveConfirmation({
-                          text: "Are you sure you want to decline this item?",
-                          action: () => handleDelete(selectedItem.id)
-                        })}
+                        onClick={() =>
+                          setActiveConfirmation({
+                            text: "Are you sure you want to decline this item?",
+                            action: () => setDeclineRemarkOpen(true),
+                          })
+                        }
                         className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
                       >
                         Decline
@@ -1038,6 +1003,51 @@ const visiblePages = getVisiblePages();
           onSave={handleSaveEdit}
           onClose={() => setEditItem(null)}
         />
+      )}
+
+      {declineRemarkOpen && selectedItem && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg overflow-hidden rounded-md bg-white shadow-2xl">
+            <div className="flex items-start justify-between bg-gradient-to-r from-[#0B648D] to-[#155F87] px-6 py-4 text-white">
+              <div>
+                <h3 className="text-xl font-bold">Decline Item</h3>
+                <p className="mt-1 text-sm text-white/90">
+                  Provide a reason visible to the person tracking this item.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setDeclineRemarkOpen(false);
+                  setDeclineRemark("");
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 hover:bg-white/25"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <label className="mb-2 block text-sm font-bold uppercase text-slate-700">
+                Decline Remark
+              </label>
+
+              <textarea
+                value={declineRemark}
+                onChange={(e) => setDeclineRemark(e.target.value)}
+                placeholder="Explain why this item post was declined..."
+                className="min-h-32 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-700 outline-none focus:border-[#0B6B8A]"
+              />
+
+              <button
+                onClick={() => handleDecline(selectedItem, declineRemark)}
+                className="mt-5 h-12 w-full rounded-xl bg-[#0B6B8A] text-sm font-black uppercase tracking-wide text-white hover:bg-[#095A74]"
+              >
+                Submit Decline
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

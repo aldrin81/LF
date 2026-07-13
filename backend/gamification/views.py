@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date
 from django.db.models import Sum
 
 from rest_framework import status
@@ -39,7 +39,8 @@ def get_current_leaderboard_settings():
     today = date.today()
 
     if settings.auto_mode and settings.open_date and settings.close_date:
-        if today >= settings.close_date:
+    # Archive only after the turn-off date has fully passed.
+        if today > settings.close_date:
             school_year, semester = get_school_year_and_semester(
                 settings.close_date
             )
@@ -48,7 +49,7 @@ def get_current_leaderboard_settings():
                 school_year=school_year,
                 semester=semester,
                 start_date=settings.open_date,
-                end_date=settings.close_date - timedelta(days=1),
+                end_date=settings.close_date,
             )
 
             if settings.is_active:
@@ -56,7 +57,10 @@ def get_current_leaderboard_settings():
                 settings.save(update_fields=["is_active", "updated_at"])
 
         else:
-            should_be_active = settings.open_date <= today < settings.close_date
+            # The turn-off date itself is still active.
+            should_be_active = (
+                settings.open_date <= today <= settings.close_date
+            )
 
             if settings.is_active != should_be_active:
                 settings.is_active = should_be_active
@@ -150,9 +154,9 @@ def update_leaderboard_settings(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if auto_mode and open_date > close_date:
+    if auto_mode and open_date >= close_date:
         return Response(
-            {"detail": "Start date cannot be later than turn-off date."},
+            {"detail": "Turn-off date must be later than the start date."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
