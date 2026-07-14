@@ -1,6 +1,14 @@
 # gamification/services.py
+from collections import defaultdict
+
 from django.db import transaction
-from .models import (LeaderboardPlayer, PointTransaction, LeaderboardHistory, LeaderboardHistoryPlayer )
+
+from .models import (
+    LeaderboardPlayer,
+    LeaderboardHistory,
+    LeaderboardHistoryPlayer,
+    PointTransaction,
+)
 
 CLAIMED_BONUS_POINTS = 10
 
@@ -60,17 +68,6 @@ def award_points(student_id, full_name, points, reason, item_id=None):
         player.save(update_fields=["points"])
 
     return point_transaction
-
-from collections import defaultdict
-
-from django.db import transaction
-
-from .models import (
-    LeaderboardHistory,
-    LeaderboardHistoryPlayer,
-    PointTransaction,
-)
-
 
 @transaction.atomic
 def archive_leaderboard(school_year, semester, start_date, end_date):

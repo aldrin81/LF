@@ -72,7 +72,6 @@ const ReportLostModal = ({ onClose }) => {
         }
       });
 
-      formData.append("poster_name", `${form.first_name} ${form.last_name}`);
       formData.append("location", finalLocation);
 
       const response = await createLostItem(formData);
@@ -152,7 +151,15 @@ const ReportLostModal = ({ onClose }) => {
                   <input className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20"
                     name="title" value={form.title} onChange={handleChange} placeholder="e.g. Blue Hydroflask" required />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+
+                <div>
+                  <label className="block text-sm sm:text-lg font-semibold text-slate-500 mb-2">Emai (Gsuite)</label>
+                  <input className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20"
+                    type="email" name="email" value={form.email} onChange={handleChange} placeholder="student@slc-sflu.edu.ph" required />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm sm:text-lg font-semibold text-slate-500 mb-2">First Name</label>
                     <input className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20"
@@ -164,23 +171,8 @@ const ReportLostModal = ({ onClose }) => {
                       name="last_name" value={form.last_name} onChange={handleChange} placeholder="Last Name" required />
                   </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm sm:text-lg font-semibold text-slate-500 mb-2">Contact Email</label>
-                <input className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20"
-                  type="email" name="email" value={form.email} onChange={handleChange} placeholder="student@slc.edu.ph" required />
-              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm sm:text-lg font-semibold text-slate-500 mb-2">Category</label>
-                  <select className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20"
-                    name="category" value={form.category} onChange={handleChange} required>
-                    {!form.category && <option value="" disabled>Select Category</option>}
-                    {CATS.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
                 <div>
                   <label className="block text-sm sm:text-lg font-semibold text-slate-500 mb-2">Location Lost</label>
                   <select className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20"
@@ -198,6 +190,14 @@ const ReportLostModal = ({ onClose }) => {
                       required
                     />
                   )}
+                </div>
+                <div>
+                  <label className="block text-sm sm:text-lg font-semibold text-slate-500 mb-2">Category</label>
+                  <select className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base sm:text-lg outline-none focus:border-[#2B3A74] focus:ring-2 focus:ring-[#2B3A74]/20"
+                    name="category" value={form.category} onChange={handleChange} required>
+                    {!form.category && <option value="" disabled>Select Category</option>}
+                    {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
               </div>
 

@@ -17,7 +17,8 @@
   const EMPTY = { 
     title: '', 
     category: 'Personal', 
-    poster_name: '',
+    first_name: '',
+    last_name: '',
     student_id: '',
     location: 'Canteen', 
     created_date: '', 
@@ -81,7 +82,8 @@ useEffect(() => {
 
     if (
       !form.title?.trim() ||
-      !form.poster_name?.trim() ||
+      !form.first_name?.trim() ||
+      !form.last_name?.trim(),
       !form.student_id?.trim() ||
       !form.created_date?.trim() ||
       (form.location === "Others" && !form.other_location?.trim())
@@ -169,23 +171,34 @@ useEffect(() => {
               </div>
 
               <div>
-                <label className={labelClass}>Reported By *</label>
-                <input
-                  className={inputClass}
-                  value={form.poster_name || ""}
-                  onChange={(e) => set("poster_name", e.target.value)}
-                  placeholder="Full name"
-                  required
-                />
-              </div>
-
-                <div>
                 <label className={labelClass}>Student ID *</label>
                 <input
                   className={inputClass}
                   value={form.student_id || ""}
                   onChange={(e) => set("student_id", e.target.value)}
                   placeholder="Student ID number"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>First Name *</label>
+                <input
+                  className={inputClass}
+                  value={form.first_name || ""}
+                  onChange={(e) => set("first_name", e.target.value)}
+                  placeholder="First name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Last Name *</label>
+                <input
+                  className={inputClass}
+                  value={form.last_name || ""}
+                  onChange={(e) => set("last_name", e.target.value)}
+                  placeholder="Last name"
                   required
                 />
               </div>
@@ -446,7 +459,8 @@ useEffect(() => {
                     id: item.id,
                     title: item.title,
                     category: item.category,
-                    poster_name: item.poster_name,
+                    first_name: item.first_name,
+                    last_name: item.last_name,
                     location: item.location,
                     created_date: item.created_date,
                     created_time: item.created_time,
@@ -507,7 +521,8 @@ useEffect(() => {
         const formData = new FormData();
 
         formData.append('title', updatedItem.title || '');
-        formData.append('poster_name', updatedItem.poster_name || '');
+        formData.append('first_name', updatedItem.first_name || '');
+        formData.append('last_name', updatedItem.last_name || '');
         formData.append('student_id', updatedItem.student_id || '');
         formData.append('category', updatedItem.category || '');
         formData.append('location', updatedItem.location || '');
@@ -534,7 +549,8 @@ useEffect(() => {
 
         formData.append('title', form.title || '');
         formData.append('category', form.category || 'Personal');
-        formData.append('poster_name', form.poster_name || '');
+        formData.append('first_name', form.first_name || '');
+        formData.append('last_name', form.last_name || '');
         formData.append('student_id', form.student_id || '');
         formData.append('location', form.location || '');
         formData.append('created_date', form.created_date || '');
@@ -568,7 +584,8 @@ useEffect(() => {
         const formData = new FormData();
 
         formData.append('title', item.title || '');
-        formData.append('poster_name', item.poster_name || '');
+        formData.append('first_name', item.first_name || '');
+        formData.append('last_name', item.last_name || '');
         formData.append('category', item.category || '');
         formData.append('location', item.location || '');
         formData.append('created_date', item.created_date || '');
@@ -596,7 +613,9 @@ useEffect(() => {
         (
           item.title?.toLowerCase().includes(searchText) ||
           item.category?.toLowerCase().includes(searchText) ||
-          item.poster_name?.toLowerCase().includes(searchText) ||
+          `${item.first_name || ''} ${item.last_name || ''}`
+            .toLowerCase()
+            .includes(searchText) ||
           item.location?.toLowerCase().includes(searchText) ||
           item.status?.toLowerCase().includes(searchText)
         )
@@ -708,7 +727,7 @@ const visiblePages = getVisiblePages();
                       </div>
                     </td>
 
-                    <td className="border border-gray-300 p-4 text-center align-middle text-slate-600 text-[14px]">{toTitleCase(item.poster_name) || '-'}</td>
+                    <td className="border border-gray-300 p-4 text-center align-middle text-slate-600 text-[14px]">{`${toTitleCase(item.first_name)} ${toTitleCase(item.last_name)}`.trim() || '-'}</td>
                     <td className="border border-gray-300 p-4 text-center align-middle text-slate-700 text-[14px]">
                       <div className="flex items-center justify-center whitespace-normal leading-tight">
                         <span>{toTitleCase(item.location) || '-'}</span>
@@ -850,9 +869,23 @@ const visiblePages = getVisiblePages();
                   </div>
 
                   <div>
-                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Reported By</p>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Email</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg font-bold text-slate-700">
+                      {toTitleCase(selectedItem.email) || '-'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">First Name</p>
                     <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
-                      {toTitleCase(selectedItem.poster_name) || '-'}
+                      {toTitleCase(selectedItem.first_name) || "-"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Last Name</p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {toTitleCase(selectedItem.last_name) || '-'}
                     </div>
                   </div>
                 </div>

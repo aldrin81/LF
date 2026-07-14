@@ -20,13 +20,15 @@ const statusColor = (s) =>
 const EMPTY = {
   title: '',
   category: 'Personal',
-  poster_name: '',
+  first_name: '',
+  last_name: '',
   location: 'Canteen',
   created_date: '',
   created_time: '',
   description: '',
   status: 'Pending',
-  image: null
+  image: null,
+  email: '',
 };
 
 
@@ -83,7 +85,9 @@ const ItemModal = ({ item, onSave, onClose }) => {
 
     if (
       !form.title?.trim() ||
-      !form.poster_name?.trim() ||
+      !form.email?.trim() ||
+      !form.first_name?.trim() ||
+      !form.last_name?.trim(),
       !form.created_date?.trim() ||
       (form.location === "Others" && !form.other_location?.trim())
     ) {
@@ -168,31 +172,41 @@ const ItemModal = ({ item, onSave, onClose }) => {
               </div>
 
               <div>
-                <label className={labelClass}>Reported By *</label>
+                <label className={labelClass}>Email (Gsuite)*</label>
+                <input
+                  type="email"
+                  className={inputClass}
+                  value={form.email || ""}
+                  onChange={(e) => set("email", e.target.value)}
+                  placeholder="student@slc-sflu.edu.ph"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>First Name *</label>
                 <input
                   className={inputClass}
-                  value={form.poster_name || ""}
-                  onChange={(e) => set("poster_name", e.target.value)}
-                  placeholder="Full name"
+                  value={form.first_name || ""}
+                  onChange={(e) => set("first_name", e.target.value)}
+                  placeholder="First Name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Last Name *</label>
+                <input
+                  className={inputClass}
+                  value={form.last_name || ""}
+                  onChange={(e) => set("last_name", e.target.value)}
+                  placeholder="Last Name"
                   required
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label className={labelClass}>Category</label>
-                <select
-                  className={inputClass}
-                  value={form.category || "Personal"}
-                  onChange={(e) => set("category", e.target.value)}
-                >
-                  {CATS.map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-
               <div>
                 <label className={labelClass}>Area Lost</label>
                 <select
@@ -215,6 +229,18 @@ const ItemModal = ({ item, onSave, onClose }) => {
                   disabled={form.location !== "Others"}
                   required={form.location === "Others"}
                 />
+              </div>
+              <div>
+                <label className={labelClass}>Category</label>
+                <select
+                  className={inputClass}
+                  value={form.category || "Personal"}
+                  onChange={(e) => set("category", e.target.value)}
+                >
+                  {CATS.map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -417,7 +443,9 @@ const LostItems = ({ currentFilter,role }) => {
               id: item.id,
               title: item.title,
               category: item.category,
-              poster_name: item.poster_name,
+              email: item.email,
+              first_name: item.first_name,
+              last_name: item.last_name,
               location: item.location,
               created_date: item.created_date,
               created_time: item.created_time,
@@ -476,7 +504,9 @@ const LostItems = ({ currentFilter,role }) => {
       const formData = new FormData();
 
       formData.append('title', updatedItem.title || '');
-      formData.append('poster_name', updatedItem.poster_name || '');
+      formData.append("email", updatedItem.email || "");
+      formData.append('first_name', updatedItem.first_name || '');
+      formData.append('last_name', updatedItem.last_name || '');
       formData.append('category', updatedItem.category || '');
       formData.append('location', updatedItem.location || '');
       formData.append('created_date', updatedItem.created_date || '');
@@ -502,7 +532,9 @@ const LostItems = ({ currentFilter,role }) => {
 
       formData.append('title', form.title);
       formData.append('category', form.category);
-      formData.append('poster_name', form.poster_name);
+      formData.append("email", form.email || "");
+      formData.append('first_name', form.first_name);
+      formData.append('last_name', form.last_name);
       formData.append('location', form.location);
       formData.append('created_date', form.created_date);
       formData.append('created_time', form.created_time || '');
@@ -569,8 +601,11 @@ const LostItems = ({ currentFilter,role }) => {
       item.status?.toUpperCase() !== 'CLAIMED' &&
       (
         item.title?.toLowerCase().includes(searchText) ||
+        item.email?.toLowerCase().includes(searchText) ||
         item.category?.toLowerCase().includes(searchText) ||
-        item.poster_name?.toLowerCase().includes(searchText) ||
+        `${item.first_name || ''} ${item.last_name || ''}`
+          .toLowerCase()
+          .includes(searchText) ||
         item.location?.toLowerCase().includes(searchText) ||
         item.status?.toLowerCase().includes(searchText)
       )
@@ -684,7 +719,7 @@ const visiblePages = getVisiblePages();
                         </span>
                       </div>
                     </td>
-                    <td className="border border-gray-300 p-4 text-center align-middle text-slate-600 text-[14px]">{toTitleCase(item.poster_name) || '-'}</td>
+                    <td className="border border-gray-300 p-4 text-center align-middle text-slate-600 text-[14px]">{`${toTitleCase(item.first_name)} ${toTitleCase(item.last_name)}`.trim() || '-'}</td>
                     <td className="border border-gray-300 p-4 text-center align-middle text-slate-700 text-[14px]">
                       <div className="flex items-center justify-center whitespace-normal leading-tight">
                         <span>{toTitleCase(item.location) || '-'}</span>
@@ -825,9 +860,31 @@ const visiblePages = getVisiblePages();
                   </div>
 
                   <div>
-                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">Reported By</p>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">
+                      Email
+                    </p>
                     <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
-                      {toTitleCase(selectedItem.poster_name) || '-'}
+                      {selectedItem.email || "-"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">
+                      First Name
+                    </p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {toTitleCase(selectedItem.first_name) || "-"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 block text-sm font-bold uppercase text-slate-700">
+                      Last Name
+                    </p>
+                    <div className="min-h-14 rounded-xl border border-slate-300 px-4 py-3 text-lg text-slate-700">
+                      {toTitleCase(selectedItem.last_name) || "-"}
                     </div>
                   </div>
                 </div>
