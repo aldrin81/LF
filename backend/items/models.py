@@ -47,7 +47,8 @@ class ItemDetails(models.Model):
     image = models.ImageField(upload_to='items_photos/', null=True, blank=True)
     status = models.CharField(choices=STATUS_OPTION, max_length=30, default="Pending")
     type = models.CharField(choices=ITEM_TYPE, max_length=30, default="Lost")
-    poster_name = models.CharField(max_length=30, default='')
+    first_name = models.CharField(max_length=100, default='')
+    last_name = models.CharField(max_length=100, default='')
 
     student_id = models.CharField(max_length=30, null=True, blank=True)
 

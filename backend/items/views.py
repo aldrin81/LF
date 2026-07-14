@@ -36,7 +36,7 @@ def create_item_details(request):
         ):
             award_points(
                 student_id=item.student_id,
-                full_name=item.poster_name,
+                full_name=item.first_name + item.last_name,
                 points=get_item_points(item),
                 reason="SURRENDER_ITEM",
                 item_id=item.id,

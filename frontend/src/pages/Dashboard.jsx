@@ -9,8 +9,21 @@ const statusColor = (s) =>
   s === 'Approved' ? 'bg-green-50 text-green-600 border border-green-100'  :
   'bg-slate-100 text-slate-500 border border-slate-200';
 
-const StatCard = ({ label, count, icon: Icon, color, bgColor, description }) => (
-  <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group relative flex flex-col justify-between overflow-hidden">
+const StatCard = ({
+  label,
+  count,
+  icon: Icon,
+  color,
+  bgColor,
+  description,
+  onClick,
+}) => (
+  <div
+    onClick={onClick}
+    className={`bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group relative flex flex-col justify-between overflow-hidden ${
+        onClick ? "cursor-pointer" : ""
+    }`}
+>
     <div className={`absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.07] transition-all duration-500 transform group-hover:scale-125 group-hover:-rotate-12 text-slate-900`}>
       <Icon size={120} />
     </div>
@@ -134,15 +147,7 @@ const Dashboard = () => {
         <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
       </div>
 
-      {/* ─── Metric Dash-Cards Grid ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Lost Reports" count={totalLost} icon={AlertCircle} color="text-rose-500" bgColor="bg-rose-50" description="Unresolved asset searches" />
-        <StatCard label="Surrendered Items" count={totalSurrendered} icon={CheckCircle2} color="text-emerald-500" bgColor="bg-emerald-50" description="Awaiting identity match" />
-        <StatCard label="Resolved Matches" count={totalClaimed} icon={Package} color="text-purple-500" bgColor="bg-purple-50" description="Successfully turned over" />
-        <StatCard label="System Operators" count={totalUsers} icon={Users} color="text-indigo-500" bgColor="bg-indigo-50" description="Authorized active roles" />
-      </div>
-          {/* ─── Reports Overview ─── */}
-          <div>
+<div>
 
           <h3 className="
           text-xs
@@ -164,49 +169,78 @@ const Dashboard = () => {
           ">
 
 
-          <StatCard
+        <StatCard
           label="Recovery Rate"
           count={`${recoveryRate}%`}
           icon={Award}
           color="text-indigo-500"
           bgColor="bg-indigo-50"
           description="Successfully resolved cases"
+          onClick={() => navigate("/dashboard/reports#recovery")}
           />
+
+          <StatCard
+label="Lost Items"
+count={totalLost}
+icon={AlertCircle}
+color="text-rose-500"
+bgColor="bg-rose-50"
+description="Reported missing items"
+onClick={() => navigate("/dashboard/lost-items")}
+/>
 
 
           <StatCard
-          label="Lost Items"
-          count={totalLost}
-          icon={AlertCircle}
-          color="text-rose-500"
-          bgColor="bg-rose-50"
-          description="Reported missing items"
-          />
+label="Surrendered"
+count={totalSurrendered}
+icon={CheckCircle2}
+color="text-emerald-500"
+bgColor="bg-emerald-50"
+description="Items turned over"
+onClick={() => navigate("/dashboard/surrendered-items")}
+/>
 
 
           <StatCard
-          label="Surrendered"
-          count={totalSurrendered}
-          icon={CheckCircle2}
-          color="text-emerald-500"
-          bgColor="bg-emerald-50"
-          description="Items turned over"
-          />
-
-
-          <StatCard
-          label="Top Hotspot"
-          count={hotspot}
-          icon={MapPin}
-          color="text-orange-500"
-          bgColor="bg-orange-50"
-          description="Most reported location"
-          />
+label="Top Hotspot"
+count={hotspot}
+icon={MapPin}
+color="text-orange-500"
+bgColor="bg-orange-50"
+description="Most reported location"
+onClick={() => navigate("/dashboard/reports#hotspot")}
+/>
 
 
           </div>
 
           </div>
+      {/* ─── Metric Dash-Cards Grid ─── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Resolved Matches" count={totalClaimed} icon={Package} color="text-purple-500" bgColor="bg-purple-50" description="Successfully turned over" />
+        <StatCard
+  label="System Operators"
+  count={totalUsers}
+  icon={Users}
+  color="text-indigo-500"
+  bgColor="bg-indigo-50"
+  description="Authorized active roles"
+  onClick={() => {
+    navigate("/dashboard/users");
+  }}
+/>
+<StatCard
+  label="Claim Requests"
+  count={pendingCount}
+  icon={AlertCircle}
+  color="text-orange-500"
+  bgColor="bg-orange-50"
+  description="Pending verification requests"
+  onClick={() => navigate("/dashboard/claim-requests")}
+/>
+      </div>
+          {/* ─── Reports Overview ─── */}
+          
       {/* ─── Main Content Layers ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         

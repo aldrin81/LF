@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { getItems } from "../api/api";
 
-
+import { useLocation } from "react-router-dom";
 // ================= HELPERS =================
 
 const pct = (a, b) =>
@@ -224,8 +224,20 @@ export default function Reports(){
 const [items,setItems] = useState([]);
 
 const [loading,setLoading] = useState(true);
-
-
+const [startDate, setStartDate] = useState("");
+const [endDate, setEndDate] = useState("");
+const [selectedType, setSelectedType] = useState("All");
+const [selectedStatus, setSelectedStatus] = useState("All");
+const [selectedCategory, setSelectedCategory] = useState("All");
+const [selectedLocation, setSelectedLocation] = useState("All");
+const [printSections, setPrintSections] = useState({
+  recovery: true,
+  activity: true,
+  status: true,
+  category: true,
+  hotspot: true,
+});
+ const location = useLocation();
 
 useEffect(() => {
 
@@ -270,26 +282,50 @@ useEffect(() => {
 
 },[]);
 
+// ================= FILTER ITEMS =================
 
+const filteredItems = items.filter((item) => {
+  const itemDate = new Date(item.created_date);
+
+  if (startDate && itemDate < new Date(startDate)) return false;
+  if (endDate && itemDate > new Date(endDate)) return false;
+
+  if (selectedType !== "All" && item.type !== selectedType)
+    return false;
+
+  if (selectedStatus !== "All" && item.status !== selectedStatus)
+    return false;
+
+  if (selectedCategory !== "All" && item.category !== selectedCategory)
+    return false;
+
+  if (selectedLocation !== "All" && item.location !== selectedLocation)
+    return false;
+
+  return true;
+});
 
 // ================= DATA PROCESSING =================
 
 
+
 const lostItems =
-items.filter(
+filteredItems.filter(
 item=>item.type==="Lost"
 );
 
 
+
+
 const surrendered =
-items.filter(
+filteredItems.filter(
 item=>item.type==="Surrendered"
 );
 
 
 
 const claimed =
-items.filter(
+filteredItems.filter(
 item=>
 item.status==="Claimed" ||
 item.status==="Returned"
@@ -307,7 +343,7 @@ lostItems.length
 
 const locations = {};
 
-items.forEach(item=>{
+filteredItems.forEach(item=>{
 
 if(!locations[item.location])
 locations[item.location]={
@@ -345,7 +381,7 @@ area,
 const categories={};
 
 
-items.forEach(item=>{
+filteredItems.forEach(item=>{
 
 categories[item.category] =
 (categories[item.category] || 0)+1;
@@ -361,7 +397,7 @@ count
 }));
 const statuses = {};
 
-items.forEach(item=>{
+filteredItems.forEach(item=>{
 
 statuses[item.status] =
 (statuses[item.status] || 0)+1;
@@ -393,14 +429,19 @@ value:claimed.length
 ];
 
 
-const totalItems = items.length;
+const totalItems = filteredItems.length;
 
 
 const topHotspot =
 areaStats[0]?.area || "None";
 
 
-
+const toggleSection = (section) => {
+  setPrintSections((prev) => ({
+    ...prev,
+    [section]: !prev[section],
+  }));
+};
 
 if(loading)
 
@@ -529,41 +570,363 @@ return ( <>
 
 
     <div className="space-y-6 p-4">
+{/* FILTER PANEL */}
+<div className="space-y-6 no-print">
+  <div className="flex items-center justify-between mb-5">
+
+  <div>
+    <h2 className="text-lg font-black text-[#2D366D]">
+      Report Filters
+    </h2>
+
+    <p className="text-xs text-slate-500">
+      Filter the analytical report before printing.
+    </p>
+  </div>
+
+  <div className="flex items-center gap-3">
+
+    <button
+      onClick={() => {
+        setStartDate("");
+        setEndDate("");
+        setSelectedType("All");
+        setSelectedStatus("All");
+        setSelectedCategory("All");
+        setSelectedLocation("All");
+      }}
+      className="bg-rose-500 hover:bg-rose-600 text-white px-5 py-2 rounded-xl font-bold transition"
+    >
+      Clear Filters
+    </button>
+
+    <button
+      onClick={() => window.print()}
+      className="flex items-center gap-2 bg-[#2D366D] hover:bg-[#1f2858] text-white px-5 py-2 rounded-xl font-bold transition"
+    >
+      <Printer size={18}/>
+      Print Report
+    </button>
+
+  </div>
+
+</div>
+
+<div className="bg-white border rounded-3xl shadow-sm p-6 no-print mt-6">
+
+  <div className="flex items-center justify-between mb-4">
+
+    <div>
+      <h3 className="text-sm font-black text-[#2D366D]">
+        Reports to Include
+      </h3>
+
+      <p className="text-xs text-slate-500 mt-1">
+        Select which sections will appear when printing.
+      </p>
+    </div>
+
+  </div>
+
+  <p className="text-xs text-slate-500 mb-4">
+    Select which report sections will appear when printing.
+  </p>
+
+  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
 
 
-      {/* PRINT BUTTON */}
 
-      <div className="flex justify-end no-print">
+    <label className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 hover:border-[#2D366D] hover:bg-slate-50 cursor-pointer transition">
 
-        <button
+  <span className="text-sm font-bold text-slate-700">
+    Recovery Performance
+  </span>
 
-        onClick={()=>window.print()}
+  <input
+    type="checkbox"
+    checked={printSections.recovery}
+    onChange={() => toggleSection("recovery")}
+    className="
+      w-5
+      h-5
+      accent-[#2D366D]
+      cursor-pointer
+    "
+  />
 
+</label>
+
+  <label className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 hover:border-[#2D366D] hover:bg-slate-50 cursor-pointer transition">
+
+  <span className="text-sm font-bold text-slate-700">
+    Item Activity
+  </span>
+
+  <input
+    type="checkbox"
+    checked={printSections.activity}
+    onChange={() => toggleSection("activity")}
+    className="
+      w-5
+      h-5
+      accent-[#2D366D]
+      cursor-pointer
+    "
+  />
+
+</label>
+
+    <label className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 hover:border-[#2D366D] hover:bg-slate-50 cursor-pointer transition">
+
+  <span className="text-sm font-bold text-slate-700">
+    Status Distribution
+  </span>
+
+  <input
+    type="checkbox"
+    checked={printSections.status}
+    onChange={() => toggleSection("status")}
+    className="
+      w-5
+      h-5
+      accent-[#2D366D]
+      cursor-pointer
+    "
+  />
+
+</label>
+
+    <label className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 hover:border-[#2D366D] hover:bg-slate-50 cursor-pointer transition">
+
+  <span className="text-sm font-bold text-slate-700">
+Item Categories  </span>
+
+  <input
+    type="checkbox"
+    checked={printSections.category}
+    onChange={() => toggleSection("category")}
+    className="
+      w-5
+      h-5
+      accent-[#2D366D]
+      cursor-pointer
+    "
+  />
+
+</label>
+
+    <label className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 hover:border-[#2D366D] hover:bg-slate-50 cursor-pointer transition">
+
+  <span className="text-sm font-bold text-slate-700">
+    Location Hotspots
+  </span>
+
+  <input
+    type="checkbox"
+    checked={printSections.hotspot}
+    onChange={() => toggleSection("hotspot")}
+    className="
+      w-5
+      h-5
+      accent-[#2D366D]
+      cursor-pointer
+    "
+  />
+
+</label>
+  </div>
+
+</div>
+</div>
+  <div className="bg-white border rounded-3xl shadow-sm p-6 mt-6">
+
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
+
+    {/* START DATE */}
+    <div>
+      <label className="block text-xs font-bold text-slate-600 mb-2">
+  Generate From
+</label>
+
+      <input
+        type="date"
+        value={startDate}
+        onChange={(e)=>setStartDate(e.target.value)}
         className="
-        flex items-center gap-2
-        bg-[#2D366D]
-        text-white
-        px-5 py-3
-        rounded-xl
-        font-black
-        text-sm
-        hover:opacity-90
+          w-full
+          rounded-xl
+          border
+          border-slate-300
+          px-3
+          py-2.5
+          text-sm
+          focus:outline-none
+          focus:ring-2
+          focus:ring-[#2D366D]
+          focus:border-[#2D366D]
         "
+      />
+    </div>
 
-        >
+    {/* END DATE */}
+    <div>
+      <label className="block text-xs font-bold text-slate-600 mb-2">
+  Generate Until
+</label>
 
-          <Printer size={18}/>
+      <input
+        type="date"
+        value={endDate}
+        onChange={(e)=>setEndDate(e.target.value)}
+        className="
+          w-full
+          rounded-xl
+          border
+          border-slate-300
+          px-3
+          py-2.5
+          text-sm
+          focus:outline-none
+          focus:ring-2
+          focus:ring-[#2D366D]
+          focus:border-[#2D366D]
+        "
+      />
+    </div>
 
-          Print Report
+    {/* TYPE */}
+    <div>
+      <label className="block text-xs font-bold text-slate-600 mb-2">
+        Type
+      </label>
 
-        </button>
+      <select
+        value={selectedType}
+        onChange={(e)=>setSelectedType(e.target.value)}
+        className="
+          w-full
+          rounded-xl
+          border
+          border-slate-300
+          px-3
+          py-2.5
+          text-sm
+          focus:outline-none
+          focus:ring-2
+          focus:ring-[#2D366D]
+        "
+      >
+        <option value="All">All</option>
+        <option value="Lost">Lost</option>
+        <option value="Surrendered">Surrendered</option>
+      </select>
+    </div>
 
+    {/* STATUS */}
+    <div>
+      <label className="block text-xs font-bold text-slate-600 mb-2">
+        Status
+      </label>
 
-      </div>
+      <select
+        value={selectedStatus}
+        onChange={(e)=>setSelectedStatus(e.target.value)}
+        className="
+          w-full
+          rounded-xl
+          border
+          border-slate-300
+          px-3
+          py-2.5
+          text-sm
+          focus:outline-none
+          focus:ring-2
+          focus:ring-[#2D366D]
+        "
+      >
+        <option value="All">All</option>
+        <option value="Pending">Pending</option>
+        <option value="Approved">Approved</option>
+        <option value="Claimed">Claimed</option>
+        <option value="Returned">Returned</option>
+        <option value="Archived">Archived</option>
+        <option value="Declined">Declined</option>
+      </select>
+    </div>
 
+    {/* CATEGORY */}
+    <div>
+      <label className="block text-xs font-bold text-slate-600 mb-2">
+        Category
+      </label>
 
+      <select
+        value={selectedCategory}
+        onChange={(e)=>setSelectedCategory(e.target.value)}
+        className="
+          w-full
+          rounded-xl
+          border
+          border-slate-300
+          px-3
+          py-2.5
+          text-sm
+          focus:outline-none
+          focus:ring-2
+          focus:ring-[#2D366D]
+        "
+      >
+        <option value="All">All</option>
+        <option value="Personal">Personal</option>
+        <option value="Accessories">Accessories</option>
+        <option value="Id">ID</option>
+        <option value="Electronics">Electronics</option>
+        <option value="Keys">Keys</option>
+        <option value="Valuables">Valuables</option>
+      </select>
+    </div>
 
+    {/* LOCATION */}
+    <div>
+      <label className="block text-xs font-bold text-slate-600 mb-2">
+        Location
+      </label>
 
+      <select
+        value={selectedLocation}
+        onChange={(e)=>setSelectedLocation(e.target.value)}
+        className="
+          w-full
+          rounded-xl
+          border
+          border-slate-300
+          px-3
+          py-2.5
+          text-sm
+          focus:outline-none
+          focus:ring-2
+          focus:ring-[#2D366D]
+        "
+      >
+        <option value="All">All</option>
+        <option value="Canteen">Canteen</option>
+        <option value="Gym">Gym</option>
+        <option value="Highschool Grounds">Highschool Grounds</option>
+        <option value="Basement">Basement</option>
+        <option value="Main Building">Main Building</option>
+        <option value="SAO Lobby">SAO Lobby</option>
+        <option value="Parking Area">Parking Area</option>
+      </select>
+    </div>
+
+  </div>
+
+</div>
+
+</div>
+    <div>
+
+</div>
 
       {/* PRINT AREA */}
 
@@ -580,6 +943,7 @@ return ( <>
 
 
 
+<>
       {/* HEADER */}
 
       <div
@@ -631,7 +995,15 @@ return ( <>
 
         <p className="mt-3 text-white/70 text-sm">
 
-  Generated from live campus item records.
+  Generated from campus item records
+{startDate && endDate && (
+  <>
+    {" "}from{" "}
+    <b>{startDate}</b>
+    {" "}to{" "}
+    <b>{endDate}</b>
+  </>
+)}.
 
   Current recovery efficiency:
 
@@ -656,8 +1028,7 @@ return ( <>
 
 
       </div>
-
-
+    </>
 
 
 
@@ -756,7 +1127,7 @@ return ( <>
 
       {/* RECOVERY GRAPH */}
 
-
+{printSections.recovery && (
       <div className="
         bg-white
         rounded-3xl
@@ -790,19 +1161,17 @@ return ( <>
 
         />
 
-
       </div>
 
 
       </div>
 
-
-
+)}
 
 
 
 {/* ITEM ACTIVITY COMPARISON */}
-
+{printSections.activity && (
 <div className="
 bg-white
 rounded-3xl
@@ -826,12 +1195,12 @@ data={comparisonData}
 />
 
 </div>
-
+)}
 
 
 
 {/* STATUS BREAKDOWN */}
-
+{printSections.status && (
 <div className="
 bg-white
 rounded-3xl
@@ -856,10 +1225,12 @@ data={statusStats}
 
 </div>
 
+)}
+
       {/* CATEGORY REPORT */}
 
 
-
+{printSections.category && (
       <div className="
       bg-white
       rounded-3xl
@@ -936,7 +1307,7 @@ data={statusStats}
       </div>
 
 
-
+)}
 
 
 
@@ -946,7 +1317,7 @@ data={statusStats}
 
       {/* LOCATION TABLE */}
 
-
+{printSections.hotspot && (
       <div className="
           bg-white
       rounded-3xl
@@ -1109,8 +1480,9 @@ data={statusStats}
       </tbody>
       </table>
       </div>
+      )}
       </div>
-    </div>
+ 
   </>
 );
 

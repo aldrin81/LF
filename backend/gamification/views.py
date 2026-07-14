@@ -36,35 +36,36 @@ def get_school_year_and_semester(reference_date):
 
 def get_current_leaderboard_settings():
     settings, _ = LeaderboardSettings.objects.get_or_create(id=1)
+
+    if not settings.auto_mode:
+        return settings
+
     today = date.today()
 
-    if settings.auto_mode and settings.open_date and settings.close_date:
-    # Archive only after the turn-off date has fully passed.
-        if today > settings.close_date:
-            school_year, semester = get_school_year_and_semester(
-                settings.close_date
-            )
+    if not settings.open_date or not settings.close_date:
+        return settings
 
-            archive_leaderboard(
-                school_year=school_year,
-                semester=semester,
-                start_date=settings.open_date,
-                end_date=settings.close_date,
-            )
+    if today > settings.close_date:
 
-            if settings.is_active:
-                settings.is_active = False
-                settings.save(update_fields=["is_active", "updated_at"])
+        school_year, semester = get_school_year_and_semester(
+            settings.close_date
+        )
 
-        else:
-            # The turn-off date itself is still active.
-            should_be_active = (
-                settings.open_date <= today <= settings.close_date
-            )
+        archive_leaderboard(
+            school_year=school_year,
+            semester=semester,
+            start_date=settings.open_date,
+            end_date=settings.close_date,
+        )
 
-            if settings.is_active != should_be_active:
-                settings.is_active = should_be_active
-                settings.save(update_fields=["is_active", "updated_at"])
+        settings.is_active = False
+
+    else:
+        settings.is_active = (
+            settings.open_date <= today <= settings.close_date
+        )
+
+    settings.save(update_fields=["is_active", "updated_at"])
 
     return settings
 
@@ -145,30 +146,36 @@ def update_leaderboard_settings(request):
     settings, _ = LeaderboardSettings.objects.get_or_create(id=1)
 
     auto_mode = request.data.get("auto_mode", settings.auto_mode)
-    open_date = request.data.get("open_date") or None
-    close_date = request.data.get("close_date") or None
 
-    if auto_mode and (not open_date or not close_date):
-        return Response(
-            {"detail": "Start date and turn-off date are required in automatic mode."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    open_date = request.data.get("open_date")
+    close_date = request.data.get("close_date")
 
-    if auto_mode and open_date >= close_date:
-        return Response(
-            {"detail": "Turn-off date must be later than the start date."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    if auto_mode:
+        if not open_date or not close_date:
+            return Response(
+                {
+                    "detail": "Start date and turn-off date are required in automatic mode."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-    settings.auto_mode = auto_mode
-    settings.open_date = open_date
-    settings.close_date = close_date
+        if open_date >= close_date:
+            return Response(
+                {
+                    "detail": "Turn-off date must be later than the start date."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-    if not auto_mode:
-        settings.is_active = request.data.get(
-            "is_active",
-            settings.is_active,
-        )
+        settings.auto_mode = True
+        settings.open_date = open_date
+        settings.close_date = close_date
+
+    else:
+        settings.auto_mode = False
+        settings.open_date = None
+        settings.close_date = None
+        settings.is_active = bool(request.data.get("is_active", settings.is_active))
 
     settings.save()
 

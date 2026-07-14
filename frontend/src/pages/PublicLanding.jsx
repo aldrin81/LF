@@ -109,7 +109,7 @@ useEffect(() => {
           <div className="bg-white p-6 sm:p-8 border-b border-slate-100 flex flex-col lg:flex-row gap-5 justify-between items-start lg:items-center shrink-0 z-20">
 
   <div className="min-w-0 flex-1">
-    <h3 className="text-2xl font-black tracking-widest text-slate-800 font-sans">
+    <h3 className="text-xl font-black tracking-widest text-slate-800 font-sans">
       {activeView === "leaderboard"
         ? "Leaderboards"
         : activeView === "track"
