@@ -36,7 +36,7 @@ def create_item_details(request):
         ):
             award_points(
                 student_id=item.student_id,
-                full_name=item.first_name + item.last_name,
+                full_name = f"{item.first_name} {item.last_name}",
                 points=get_item_points(item),
                 reason="SURRENDER_ITEM",
                 item_id=item.id,
@@ -52,7 +52,7 @@ def create_item_details(request):
                 send_mail(
                     subject=f"Lost Item Report Submitted - {item.ticket_code}",
                     message=f"""
-Hello {item.poster_name},
+Hello {item.first_name} {item.last_name},
 
 Your lost item report has been successfully submitted.
 
@@ -109,7 +109,7 @@ def item_details(request, pk):
             ):
                 award_points(
                     student_id=updated_item.student_id,
-                    full_name=updated_item.poster_name,
+                    full_name = f"{updated_item.first_name} {updated_item.last_name}",
                     points=CLAIMED_BONUS_POINTS,
                     reason="ITEM_CLAIMED",
                     item_id=updated_item.id,

@@ -231,7 +231,7 @@ useEffect(() => {
                   required={form.location === "Others"}
                 />
               </div>
-              
+
               <div>
                 <label className={labelClass}>Category</label>
                 <select
@@ -306,6 +306,14 @@ useEffect(() => {
 
             <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
               <button
+                type="button"
+                onClick={onClose}
+                className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
+              >
+                Cancel
+              </button>
+
+              <button
                 type="submit"
                 disabled={saving}
                 className={`flex-1 py-3 rounded-xl text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 ${
@@ -315,14 +323,6 @@ useEffect(() => {
                 }`}
               >
                 {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Item"}
-              </button>
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
-              >
-                Cancel
               </button>
             </div>
           </div>

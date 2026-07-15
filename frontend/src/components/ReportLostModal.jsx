@@ -64,8 +64,6 @@ const ReportLostModal = ({ onClose }) => {
       Object.keys(form).forEach(key => {
         if (key === "other_location") return;
         if (key === "location") return;
-        if (key === "first_name") return;
-        if (key === "last_name") return;
 
         if (form[key] !== null) {
           formData.append(key, form[key]);
@@ -232,6 +230,7 @@ const ReportLostModal = ({ onClose }) => {
                 >
                   Cancel
                 </button>
+
                 <button
                   type="submit"
                   className="flex-1 py-3 rounded-lg bg-[#2B3A74] text-white font-bold hover:bg-[#184C73] uppercase tracking-wide transition"

@@ -13,19 +13,27 @@ const ClaimRequests = () => {
   const [remarkOpen, setRemarkOpen] = useState(false);
 
   useEffect(() => {
-    load();
-  }, []);
+      load();
+  
+      const interval = setInterval(() => {
+        load();
+      }, 3000);
+  
+      return () => clearInterval(interval);
+    }, []);
 
   const load = async () => {
-    try {
-      const data = await getClaims();
-      setClaims(data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const data = await getClaims();
+    console.log("Claims:", data);
+    setClaims(data);
+  } catch (err) {
+    console.error(err.response?.data || err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const review = async (decision) => {
     if (decision === "DECLINED" && !remark.trim()) {

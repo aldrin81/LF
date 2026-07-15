@@ -62,6 +62,16 @@ const ProfileModal = ({ isOpen, onClose }) => {
       (profileData?.first_name || "User") + " " + (profileData?.last_name || "")
     )}&background=0B6FA4&color=fff&size=256`;
 
+    function toTitleCase(text) {
+  if (!text) return "";
+
+  return text
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
   return (
     <>
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
@@ -107,16 +117,16 @@ const ProfileModal = ({ isOpen, onClose }) => {
               {loading ? "Loading..." : `${profileData?.first_name || ""} ${profileData?.last_name || ""}`}
             </h1>
             <p className="mt-1 text-center text-sm font-bold uppercase tracking-widest text-slate-400">
-              {profileData?.position || "No Position"}
+              {profileData?.role || "No Position"}
             </p>
 
             <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <ProfileField icon={User} label="First Name" value={profileData?.first_name || ""} />
-              <ProfileField icon={User} label="Last Name" value={profileData?.last_name || ""} />
-              <ProfileField icon={Mail} label="Email" value={profileData?.email || ""} />
-              <ProfileField icon={Phone} label="Contact Number" value={profileData?.contact || ""} />
+              <ProfileField icon={User} label="First Name" value={profileData?.first_name || "-"} />
+              <ProfileField icon={User} label="Last Name" value={profileData?.last_name || "-"} />
+              <ProfileField icon={Mail} label="Email" value={profileData?.email || "-"} />
+              <ProfileField icon={Phone} label="Contact Number" value={profileData?.contact || "-"} />
               <div className="sm:col-span-2">
-                <ProfileField icon={Shield} label="Position" value={profileData?.position || ""} />
+                <ProfileField icon={Shield} label="Position" value={toTitleCase(profileData?.role) || "-"} />
               </div>
             </div>
 

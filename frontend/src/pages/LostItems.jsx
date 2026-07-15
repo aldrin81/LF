@@ -26,7 +26,7 @@ const EMPTY = {
   created_date: '',
   created_time: '',
   description: '',
-  status: 'Pending',
+  status: 'Approved',
   image: null,
   email: '',
 };
@@ -304,6 +304,14 @@ const ItemModal = ({ item, onSave, onClose }) => {
 
             <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
               <button
+                type="button"
+                onClick={onClose}
+                className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
+              >
+                Cancel
+              </button>
+
+              <button
                 type="submit"
                 disabled={saving}
                 className={`flex-1 py-3 rounded-xl text-white text-base font-semibold uppercase tracking-wide shadow-md transition-all duration-200 ${
@@ -313,14 +321,6 @@ const ItemModal = ({ item, onSave, onClose }) => {
                 }`}
               >
                 {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Item"}
-              </button>
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="h-12 rounded-xl bg-slate-200 text-sm font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-300"
-              >
-                Cancel
               </button>
             </div>
           </div>
@@ -379,7 +379,7 @@ const LostItems = ({ currentFilter,role }) => {
 
     const interval = setInterval(() => {
       fetchItems();
-    }, 3000); // fetch every 1 seconds
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);

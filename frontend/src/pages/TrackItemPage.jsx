@@ -133,7 +133,7 @@ export default function TrackItemPage() {
                             {item.status === "Declined" && item.decline_remark && (
                                 <div className="mt-5 border-t border-red-200 pt-4">
                                     <p className="text-xs font-bold uppercase text-red-600">
-                                    Admin Remark
+                                    Remark
                                     </p>
                                     <p className="mt-2 whitespace-pre-wrap rounded-xl bg-red-50 p-4 text-sm text-red-800">
                                     {item.decline_remark}
